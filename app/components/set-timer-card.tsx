@@ -2,10 +2,10 @@ import { faClock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface Props {
-	roundTime: number;
+	setRoundTime: (newTime: number) => void;
 }
 
-const TimerCard = ({ roundTime }: Props) => {
+const SetTimerCard = ({ setRoundTime }: Props) => {
 	return (
 		<div
 			className='flex justify-center items-center gap-5'
@@ -17,9 +17,10 @@ const TimerCard = ({ roundTime }: Props) => {
 			>
 				<FontAwesomeIcon icon={faClock} className='text-[#666666] text-2xl' />
 				<select
-					className='border border-white rounded-lg mx-2 px-3 py-1.5 text-base font-semibold text-white'
+					className='border border-white rounded-lg bg-[#1a1a1a] mx-2 px-3 py-1.5 text-base font-semibold text-white'
 					id='roundTimerSelect'
-					defaultValue={roundTime}
+					defaultValue={60}
+					onChange={(e) => setRoundTime(Number(e.target.value))}
 				>
 					<option value='30'>30</option>
 					<option value='60'>60</option>
@@ -32,4 +33,4 @@ const TimerCard = ({ roundTime }: Props) => {
 	);
 };
 
-export default TimerCard;
+export default SetTimerCard;
