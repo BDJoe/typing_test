@@ -5,22 +5,15 @@ import ProgressBar from "@/components/progress-bar";
 import SetTimerCard from "@/components/set-timer-card";
 import StartButton from "@/components/buttons/start-button";
 import ResetButton from "@/components/buttons/reset-button";
-import { RefObject, use, useEffect, useMemo, useRef, useState } from "react";
-import { start } from "repl";
-import { time } from "console";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getRandomWords } from "./utils/get-random-words";
+import { get } from "http";
 
 export default function Home() {
-	const texts = [
-		"The art of programming is the art of organizing complexity. Good code is its own best documentation. When you feel the need to write a comment, first try to refactor the code so that any comment becomes superfluous.",
-		"Design is not just what it looks like and feels like. Design is how it works. The best way to find out if you can trust somebody is to trust them. Innovation distinguishes between a leader and a follower.",
-		"The only way to do great work is to love what you do. Stay hungry, stay foolish. Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work.",
-		"Technology is best when it brings people together. The advance of technology is based on making it fit in so that you don't really even notice it, so it's part of everyday life.",
-		"Simplicity is the ultimate sophistication. It takes a lot of hard work to make something simple, to truly understand the underlying challenges and come up with elegant solutions.",
-		"The future belongs to those who believe in the beauty of their dreams. Success is not final, failure is not fatal, it is the courage to continue that counts.",
-	];
+	const texts = getRandomWords(50);
 
 	// Global variables
-	const [currentText, setCurrentText] = useState("");
+	const [currentText, setCurrentText] = useState(getRandomWords(50));
 	//const [currentIndex, setCurrentIndex] = useState(0);
 	const [errors, setErrors] = useState(0);
 	const [totalChars, setTotalChars] = useState(0);
@@ -31,6 +24,7 @@ export default function Home() {
 	const [isActive, setIsActive] = useState(false);
 	const [wpm, setWpm] = useState(0);
 	const [accuracy, setAccuracy] = useState(100);
+	const [isFocused, setIsFocused] = useState(true);
 
 	const inputRef = useRef<HTMLInputElement>(null);
 	const cursorRef = useRef<HTMLDivElement>(null);
@@ -57,7 +51,7 @@ export default function Home() {
 	};
 
 	const loadNewText = () => {
-		setCurrentText(texts[Math.floor(Math.random() * texts.length)]);
+		setCurrentText(getRandomWords(50));
 	};
 
 	const startTimer = (round) => {
@@ -69,6 +63,22 @@ export default function Home() {
 		}, 1000);
 	};
 
+	const pauseTimer = () => {
+		if (timerRef.current) {
+			timerRef.current = setInterval(() => {
+				setTimeLeft((prev) => prev);
+			}, 1000);
+		}
+	};
+
+	const resumeTimer = () => {
+		if (!timerRef.current) {
+			timerRef.current = setInterval(() => {
+				setTimeLeft((prev) => prev - 1);
+			}, 1000);
+		}
+	};
+
 	const stopTimer = () => {
 		if (timerRef.current) {
 			clearInterval(timerRef.current);
@@ -77,7 +87,7 @@ export default function Home() {
 	};
 
 	const resetTest = () => {
-		loadNewText();
+		//loadNewText();
 		setErrors(0);
 		setTotalChars(0);
 		setIsActive(false);
@@ -130,12 +140,16 @@ export default function Home() {
 	const handleBlur = () => {
 		if (isActive && inputRef.current) {
 			setIsActive(false);
+			setIsFocused(false);
+			stopTimer();
 		}
 	};
 
 	const handleFocus = () => {
 		if (!isActive && inputRef.current) {
 			setIsActive(true);
+			setIsFocused(true);
+			resumeTimer();
 		}
 	};
 
@@ -170,7 +184,7 @@ export default function Home() {
 	};
 
 	const updateStats = () => {
-		const timeElapsed = (Date.now() - startTime) / 1000 / 60;
+		const timeElapsed = (roundTime - timeLeft) / 60;
 		const grossWPM = totalChars / 5 / timeElapsed;
 		const netWPM = Math.max(0, Math.round(grossWPM - errors / timeElapsed));
 		const accuracy =
@@ -214,71 +228,90 @@ export default function Home() {
 	};
 
 	return (
-		<div className='max-md:py-8 max-md:px-6 max-md:m-4 flex min-h-screen items-center justify-center font-mono p-20 leading-[1.6]'>
-			{/*^ Body ^*/}
-			{/* Main Container */}
-			<div className='max-w-250 w-full bg-[#111111] rounded-2xl border-[#222222] border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'>
-				{/* Header */}
-				<Header />
-				{/* Setting */}
-				<div className='mb-10'>
-					<SetTimerCard setRoundTime={(e) => setRoundTime(e)} />
+		<div>
+			{!isFocused && isActive && (
+				<div className='absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center text-white z-10'>
+					<h2 className='text-3xl font-bold mb-4'>
+						Click to focus and continue typing
+					</h2>
+					<p className='text-lg'>The test is paused while unfocused.</p>
 				</div>
-				{/* Statistics Display */}
-				<div className='max-md:grid-cols-1 max-md:gap-4 grid auto-fit-180 gap-6 mb-12'>
-					<StatCard icon='fa-solid fa-gauge-high' value={wpm} label='WPM' />
-					<StatCard
-						icon='fa-solid fa-bullseye'
-						value={accuracy}
-						label='Accuracy'
-					/>
-					{isActive && (
-						<StatCard
-							icon='fa-solid fa-clock'
-							value={timeLeft}
-							label='Time Left'
-						/>
-					)}
-					<StatCard
-						icon='fa-solid fa-keyboard'
-						value={totalChars}
-						label='Characters'
-					/>
-				</div>
-				{/* Progress Bar and Timer */}
-				<ProgressBar timeLeft={timeLeft} roundTime={roundTime} />
-
-				{/* Typing Area */}
-				<div className='max-md:p-6 max-md:text-base bg-[#1a1a1a] border-[#333333] border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
-					<span
-						className='absolute top-8 bg-[#1a1a1a] left-6 h-[1.2em] animate-pulse transition-all duration-100 ease-in-out'
-						ref={cursorRef}
-					>
-						|
-					</span>
-					<div className='w-full' ref={textContentRef}>
-						{textContent.map((char, index) => (
-							<span key={index} className={char[1]}>
-								{char[0]}
-							</span>
-						))}
+			)}
+			<div
+				className={
+					!isFocused && isActive
+						? "blur-sm max-md:py-8 max-md:px-6 max-md:m-4 flex min-h-screen items-center justify-center font-mono p-20 leading-[1.6]"
+						: "max-md:py-8 max-md:px-6 max-md:m-4 flex min-h-screen items-center justify-center font-mono p-20 leading-[1.6]"
+				}
+				onFocus={() => {
+					inputRef.current?.focus();
+					console.log("focused");
+				}}
+			>
+				{/*^ Body ^*/}
+				{/* Main Container */}
+				<div className='max-w-250 w-full bg-[#111111] rounded-2xl border-[#222222] border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'>
+					{/* Header */}
+					<Header />
+					{/* Setting */}
+					<div className='mb-10'>
+						<SetTimerCard setRoundTime={(e) => setRoundTime(e)} />
 					</div>
-					<input
-						type='text'
-						className='absolute w-full h-full left-0 top-0 opacity-0'
-						ref={inputRef}
-						autoFocus
-						autoComplete='off'
-						spellCheck='false'
-						onChange={handleInput}
-						onBlur={handleBlur}
-						onFocus={handleFocus}
-					/>
-				</div>
-				{/* Control Buttons */}
-				<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-					<StartButton startTest={startTest} />
-					<ResetButton reset={loadNewText} />
+					{/* Statistics Display */}
+					<div className='max-md:grid-cols-1 max-md:gap-4 grid auto-fit-180 gap-6 mb-12'>
+						<StatCard icon='fa-solid fa-gauge-high' value={wpm} label='WPM' />
+						<StatCard
+							icon='fa-solid fa-bullseye'
+							value={accuracy}
+							label='Accuracy'
+						/>
+						{isActive && (
+							<StatCard
+								icon='fa-solid fa-clock'
+								value={timeLeft}
+								label='Time Left'
+							/>
+						)}
+						<StatCard
+							icon='fa-solid fa-keyboard'
+							value={totalChars}
+							label='Characters'
+						/>
+					</div>
+					{/* Progress Bar and Timer */}
+					<ProgressBar timeLeft={timeLeft} roundTime={roundTime} />
+					{/* Typing Area */}
+					<div className='max-md:p-6 max-md:text-base bg-[#1a1a1a] border-[#333333] border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
+						<span
+							className='absolute top-8 bg-[#1a1a1a] left-6 h-[1.2em] animate-pulse transition-all duration-100 ease-in-out'
+							ref={cursorRef}
+						>
+							|
+						</span>
+						<div className='w-full' ref={textContentRef}>
+							{textContent.map((char, index) => (
+								<span key={index} className={char[1]}>
+									{char[0]}
+								</span>
+							))}
+						</div>
+						<input
+							type='text'
+							className='absolute w-full h-full left-0 top-0 opacity-0'
+							ref={inputRef}
+							autoFocus
+							autoComplete='off'
+							spellCheck='false'
+							onChange={handleInput}
+							onBlur={handleBlur}
+							onFocus={handleFocus}
+						/>
+					</div>
+					{/* Control Buttons */}
+					<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
+						<StartButton startTest={startTest} />
+						<ResetButton reset={loadNewText} />
+					</div>
 				</div>
 			</div>
 		</div>
