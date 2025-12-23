@@ -4,6 +4,7 @@ import "@/globals.css";
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import Header from "./components/header";
 config.autoAddCss = false;
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
 				className={`${geistMono.variable} ${geistSans.variable} antialiased m-0 p-0`}
 			>
 				<div className='min-h-screen min-w-screen bg-gradient-to-b from-[#242323] to-[#242222] text-white'>
+					<Header />
 					{children}
 				</div>
 			</body>

@@ -13,9 +13,9 @@ export const getRandomWords = (
 				words.push(
 					data[randomIndex][0].toUpperCase() + data[randomIndex].slice(1)
 				);
-			else words.push(data[randomIndex]);
+			else words.push(data[randomIndex].toLowerCase());
 		} else {
-			words.push(data[randomIndex]);
+			words.push(data[randomIndex].toLowerCase());
 		}
 		if (enablePunctuation) {
 			const punctuationMarks = [".", ",", "!", "?", ";", ":"];
