@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "@/globals.css";
 
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
@@ -29,9 +29,11 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body
-				className={`${geistMono.variable} ${geistSans.variable} antialiased m-0 p-0 box-border`}
+				className={`${geistMono.variable} ${geistSans.variable} antialiased m-0 p-0`}
 			>
-				{children}
+				<div className='min-h-screen min-w-screen bg-gradient-to-b from-[#242323] to-[#242222] text-white'>
+					{children}
+				</div>
 			</body>
 		</html>
 	);
