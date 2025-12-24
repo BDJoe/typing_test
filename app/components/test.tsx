@@ -1,16 +1,14 @@
 "use client";
-import { getRandomWords } from "@/utils/get-random-words";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ResetButton from "./buttons/reset-button";
 import ProgressBar from "./progress-bar";
 import SettingsCard from "./settings-card";
 import { RoundResult } from "@/types/types";
 import StatCard from "./stat-card";
+import { getRandomQuote } from "@/utils/server/get-quote";
 
 const Test = () => {
-	const [currentText, setCurrentText] = useState(
-		getRandomWords(50, false, false)
-	);
+	const [currentText, setCurrentText] = useState("");
 	const [textContent, setTextContent] = useState<string[][]>([]);
 	const [isFocused, setIsFocused] = useState(true);
 	const [capitalsEnabled, setCapitalsEnabled] = useState(false);
@@ -23,16 +21,47 @@ const Test = () => {
 	const [isPaused, setIsPaused] = useState(false);
 	const [results, setResults] = useState<RoundResult | null>(null);
 	const [roundComplete, setRoundComplete] = useState(false);
-	console.log(roundComplete, results);
+	const [gameMode, setGameMode] = useState("words");
+	const [quoteLength, setQuoteLength] = useState("medium");
 
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const textContentRef = useRef<HTMLDivElement>(null);
 	const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-	const loadNewText = () => {
-		setCurrentText(getRandomWords(50, capitalsEnabled, punctuationEnabled));
+	const loadNewText = async () => {
+		if (gameMode === "quote") {
+			try {
+				let minLength = 0;
+				let maxLength = 0;
+				if (quoteLength === "short") {
+					minLength = 100;
+					maxLength = 150;
+				} else if (quoteLength === "medium") {
+					minLength = 200;
+					maxLength = 250;
+				} else if (quoteLength === "long") {
+					minLength = 275;
+					maxLength = 350;
+				}
+				const text = await getRandomQuote(minLength, maxLength);
+				setCurrentText(text);
+				return text;
+			} catch (error) {
+				console.error("Error fetching new text:", error);
+				return "Error fetching new text.";
+			}
+		} else if (gameMode === "words") {
+			const { getRandomWords } = await import("@/utils/get-random-words");
+			const text = getRandomWords(50, capitalsEnabled, punctuationEnabled);
+			setCurrentText(text);
+			return text;
+		}
 	};
+
+	useEffect(() => {
+		loadNewText();
+	}, [gameMode, capitalsEnabled, punctuationEnabled, quoteLength]);
 
 	const setCursorPosition = (inputValue = "") => {
 		if (!textContentRef.current) return;
@@ -40,6 +69,7 @@ const Test = () => {
 
 		const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
 			.children as HTMLCollectionOf<HTMLSpanElement>;
+		if (chars.length === 0) return;
 
 		const offsetLeft = chars[inputValue.length]
 			? chars[inputValue.length].offsetLeft
@@ -54,20 +84,34 @@ const Test = () => {
 	};
 
 	// TIMER LOGIC
-
+	// TODO: Refactor timer logic into a custom hook and fix quote mode timer issues
 	const startTimer = (round: number) => {
 		if (timerRef.current) return;
-		setTimeLeft(round);
-		timerRef.current = setInterval(() => {
-			setTimeLeft((prev) => prev - 1);
-		}, 1000);
+		if (gameMode === "words") {
+			setTimeLeft(round);
+			timerRef.current = setInterval(() => {
+				setTimeLeft((prev) => prev - 1);
+			}, 1000);
+		} else if (gameMode === "quote") {
+			setTimeLeft(0);
+			setRoundTime(0);
+			timerRef.current = setInterval(() => {
+				setRoundTime((prev) => prev + 1);
+			}, 1000);
+		}
 	};
 
 	const resumeTimer = () => {
 		if (!timerRef.current) {
-			timerRef.current = setInterval(() => {
-				setTimeLeft((prev) => prev - 1);
-			}, 1000);
+			if (gameMode === "words") {
+				timerRef.current = setInterval(() => {
+					setTimeLeft((prev) => prev - 1);
+				}, 1000);
+			} else if (gameMode === "quote") {
+				timerRef.current = setInterval(() => {
+					setRoundTime((prev) => prev + 1);
+				}, 1000);
+			}
 		}
 	};
 
@@ -203,7 +247,7 @@ const Test = () => {
 	}, []);
 
 	useEffect(() => {
-		if (timeLeft <= 0) {
+		if (timeLeft <= 0 && gameMode === "words") {
 			endTest();
 		}
 	}, [timeLeft]);
@@ -228,14 +272,12 @@ const Test = () => {
 	const handleSettings = (setting: string) => {
 		if (setting === "capitals") {
 			setCapitalsEnabled(!capitalsEnabled);
+			loadNewText();
 		} else if (setting === "punctuation") {
 			setPunctuationEnabled(!punctuationEnabled);
+			loadNewText();
 		}
 	};
-
-	useMemo(() => {
-		loadNewText();
-	}, [capitalsEnabled, punctuationEnabled]);
 
 	return (
 		<>
@@ -334,12 +376,18 @@ const Test = () => {
 								setPunctuation={() => {
 									handleSettings("punctuation");
 								}}
+								setGameMode={(mode) => setGameMode(mode)}
+								gameMode={gameMode}
+								quoteLength={quoteLength}
+								setQuoteLength={(length) => setQuoteLength(length)}
 							/>
 						</div>
 						{/* Progress Bar and Timer */}
 						<div
 							className={`transition-all duration-300 ease-in-out ${
-								isActive ? "opacity-100 mb-20" : "opacity-0 mb-0"
+								isActive && gameMode === "words"
+									? "opacity-100 mb-20"
+									: "opacity-0 mb-0"
 							}`}
 						>
 							<ProgressBar timeLeft={timeLeft} roundTime={roundTime} />
