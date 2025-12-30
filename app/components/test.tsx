@@ -1,34 +1,89 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ResetButton from "./buttons/reset-button";
 import ProgressBar from "./progress-bar";
 import SettingsCard from "./settings-card";
-import { RoundResult } from "@/types/types";
+import { GameConfig, RoundResult } from "@/types/types";
 import StatCard from "./stat-card";
-import { getRandomQuote } from "@/utils/server/get-quote";
+import {
+	getCookie,
+	getRandomQuote,
+	saveResults,
+	setCookie,
+} from "@/utils/server/actions";
+import { getRandomWords } from "@/utils/get-random-words";
+import { useTimer } from "react-timer-hook";
+import TextContent from "./text-content";
 
-const Test = () => {
+interface Props {
+	config: GameConfig;
+}
+const Test = ({ config }: Props) => {
+	// STATES
 	const [currentText, setCurrentText] = useState("");
 	const [textContent, setTextContent] = useState<string[][]>([]);
 	const [isFocused, setIsFocused] = useState(true);
-	const [capitalsEnabled, setCapitalsEnabled] = useState(false);
-	const [punctuationEnabled, setPunctuationEnabled] = useState(false);
+	const [capitalsEnabled, setCapitalsEnabled] = useState(
+		config.capitalsEnabled || false
+	);
+	const [punctuationEnabled, setPunctuationEnabled] = useState(
+		config.punctuationEnabled || false
+	);
 	const [errors, setErrors] = useState(0);
 	const [totalChars, setTotalChars] = useState(0);
-	const [roundTime, setRoundTime] = useState(60);
-	const [timeLeft, setTimeLeft] = useState(60);
+	const [roundTime, setRoundTime] = useState(config.roundTime || 60);
 	const [isActive, setIsActive] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
 	const [results, setResults] = useState<RoundResult | null>(null);
 	const [roundComplete, setRoundComplete] = useState(false);
-	const [gameMode, setGameMode] = useState("words");
-	const [quoteLength, setQuoteLength] = useState("medium");
+	const [gameMode, setGameMode] = useState(config.gameMode || "words");
+	const [quoteLength, setQuoteLength] = useState(
+		config.quoteLength || "medium"
+	);
 
+	// REFS
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const textContentRef = useRef<HTMLDivElement>(null);
-	const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+	// useEffect(() => {
+	// 	const fetchGameConfig = async () => {
+	// 		const configCookie = await getCookie("gameConfig");
+	// 		if (configCookie) {
+	// 			const config: GameConfig = JSON.parse(configCookie);
+	// 			setCapitalsEnabled(config.capitalsEnabled);
+	// 			setPunctuationEnabled(config.punctuationEnabled);
+	// 			setRoundTime(config.roundTime);
+	// 			setGameMode(config.gameMode);
+	// 			setQuoteLength(config.quoteLength);
+	// 		}
+	// 	};
+	// 	fetchGameConfig();
+	// }, [config]);
+
+	// TIMER LOGIC
+	const expiryTimestamp = new Date();
+	expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + roundTime); // Set initial expiry time
+
+	const { totalSeconds, pause, resume, restart } = useTimer({
+		expiryTimestamp: expiryTimestamp,
+		onExpire: () => endTest(),
+		autoStart: false,
+	});
+
+	const startTimer = (roundTime: number) => {
+		const newExpiryTimestamp = new Date();
+		if (gameMode === "words") {
+			newExpiryTimestamp.setSeconds(
+				newExpiryTimestamp.getSeconds() + roundTime
+			);
+		} else {
+			newExpiryTimestamp.setSeconds(newExpiryTimestamp.getSeconds() + 3600); // 1 hour for quote mode
+		}
+		restart(newExpiryTimestamp);
+	};
+
+	// LOAD NEW TEXT LOGIC
 	const loadNewText = async () => {
 		if (gameMode === "quote") {
 			try {
@@ -52,7 +107,6 @@ const Test = () => {
 				return "Error fetching new text.";
 			}
 		} else if (gameMode === "words") {
-			const { getRandomWords } = await import("@/utils/get-random-words");
 			const text = getRandomWords(50, capitalsEnabled, punctuationEnabled);
 			setCurrentText(text);
 			return text;
@@ -60,68 +114,21 @@ const Test = () => {
 	};
 
 	useEffect(() => {
+		setTextContent(
+			currentText
+				.split("")
+				.map((char) => [
+					char,
+					"text-[#666666] relative transition-all duration-150 ease-in-out",
+				])
+		);
+	}, [currentText]);
+
+	useEffect(() => {
 		loadNewText();
 	}, [gameMode, capitalsEnabled, punctuationEnabled, quoteLength]);
 
-	const setCursorPosition = (inputValue = "") => {
-		if (!textContentRef.current) return;
-		if (!cursorRef.current) return;
-
-		const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
-			.children as HTMLCollectionOf<HTMLSpanElement>;
-		if (chars.length === 0) return;
-
-		const offsetLeft = chars[inputValue.length]
-			? chars[inputValue.length].offsetLeft
-			: chars[chars.length - 1].offsetLeft +
-			  chars[chars.length - 1].offsetWidth;
-		const offsetTop = chars[inputValue.length]
-			? chars[inputValue.length].offsetTop
-			: chars[chars.length - 1].offsetTop;
-
-		cursorRef.current.style.left = `${offsetLeft - 7.5}px`;
-		cursorRef.current.style.top = `${offsetTop - 9}px`;
-	};
-
-	// TIMER LOGIC
-	// TODO: Refactor timer logic into a custom hook and fix quote mode timer issues
-	const startTimer = (round: number) => {
-		if (timerRef.current) return;
-		if (gameMode === "words") {
-			setTimeLeft(round);
-			timerRef.current = setInterval(() => {
-				setTimeLeft((prev) => prev - 1);
-			}, 1000);
-		} else if (gameMode === "quote") {
-			setTimeLeft(0);
-			setRoundTime(0);
-			timerRef.current = setInterval(() => {
-				setRoundTime((prev) => prev + 1);
-			}, 1000);
-		}
-	};
-
-	const resumeTimer = () => {
-		if (!timerRef.current) {
-			if (gameMode === "words") {
-				timerRef.current = setInterval(() => {
-					setTimeLeft((prev) => prev - 1);
-				}, 1000);
-			} else if (gameMode === "quote") {
-				timerRef.current = setInterval(() => {
-					setRoundTime((prev) => prev + 1);
-				}, 1000);
-			}
-		}
-	};
-
-	const stopTimer = () => {
-		if (timerRef.current) {
-			clearInterval(timerRef.current);
-			timerRef.current = null;
-		}
-	};
-
+	// GAME LOGIC
 	const resetTest = () => {
 		setIsActive(false);
 		setIsPaused(false);
@@ -138,11 +145,10 @@ const Test = () => {
 		if (cursorRef.current) {
 			setCursorPosition();
 		}
-		stopTimer();
-		setTimeLeft(roundTime);
+		pause();
 	};
 
-	useMemo(() => {
+	useEffect(() => {
 		resetTest();
 	}, [currentText]);
 
@@ -155,27 +161,17 @@ const Test = () => {
 	const endTest = () => {
 		if (inputRef.current) inputRef.current.disabled = true;
 		setIsActive(false);
-		stopTimer();
+		pause();
 		updateStats();
 		setRoundComplete(true);
 	};
 
-	useEffect(() => {
-		setTextContent(
-			currentText
-				.split("")
-				.map((char) => [
-					char,
-					"text-[#666666] relative transition-all duration-150 ease-in-out",
-				])
-		);
-	}, [currentText]);
-
+	// FOCUS AND BLUR HANDLERS
 	const handleBlur = () => {
 		if (isActive && inputRef.current) {
 			setIsPaused(true);
 			setIsFocused(false);
-			stopTimer();
+			pause();
 		}
 	};
 
@@ -184,7 +180,7 @@ const Test = () => {
 			inputRef.current.focus();
 			setIsPaused(false);
 			setIsFocused(true);
-			resumeTimer();
+			resume();
 		}
 	};
 
@@ -194,6 +190,7 @@ const Test = () => {
 		}
 	}, [isFocused]);
 
+	// UPDATE DISPLAY LOGIC
 	const updateDisplay = (input: string) => {
 		let errorCount = 0;
 		const updatedContent = textContent.map((char, index) => {
@@ -221,8 +218,33 @@ const Test = () => {
 		setTextContent(updatedContent);
 	};
 
+	// SET CURSOR POSITION LOGIC
+	const setCursorPosition = (inputValue = "") => {
+		if (!textContentRef.current) return;
+		if (!cursorRef.current) return;
+
+		const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
+			.children as HTMLCollectionOf<HTMLSpanElement>;
+		if (chars.length === 0) return;
+
+		const offsetLeft = chars[inputValue.length]
+			? chars[inputValue.length].offsetLeft
+			: chars[chars.length - 1].offsetLeft +
+			  chars[chars.length - 1].offsetWidth;
+		const offsetTop = chars[inputValue.length]
+			? chars[inputValue.length].offsetTop
+			: chars[chars.length - 1].offsetTop;
+
+		cursorRef.current.style.left = `${offsetLeft - 7.5}px`;
+		cursorRef.current.style.top = `${offsetTop - 9}px`;
+	};
+
+	// UPDATE STATS LOGIC
 	const updateStats = () => {
-		const timeElapsed = (roundTime - timeLeft) / 60;
+		const timeElapsed =
+			gameMode === "words"
+				? (roundTime - totalSeconds) / 60
+				: (3600 - totalSeconds) / 60;
 		const grossWPM = totalChars / 5 / timeElapsed;
 		const netWPM = Math.max(0, Math.round(grossWPM - errors / timeElapsed));
 		const accuracy =
@@ -234,31 +256,30 @@ const Test = () => {
 			wpm: netWPM,
 			accuracy,
 			totalChars,
+			timeElapsed,
+			gameConfig: config,
+			text: currentText.slice(0, totalChars),
+			timestamp: new Date(),
+		});
+		saveResults({
+			wpm: netWPM,
+			accuracy,
+			totalChars,
+			timeElapsed,
+			gameConfig: config,
+			text: currentText.slice(0, totalChars),
+			timestamp: new Date(),
 		});
 	};
 
-	useEffect(() => {
-		if (isActive && !isPaused) {
-			startTimer(roundTime);
-		}
-		return () => {
-			stopTimer();
-		};
-	}, []);
-
-	useEffect(() => {
-		if (timeLeft <= 0 && gameMode === "words") {
-			endTest();
-		}
-	}, [timeLeft]);
-
+	// HANDLERS
 	const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 		if (!isActive) startTest();
 
 		setTotalChars(e.target.value.length);
 		updateDisplay(e.target.value);
 		setCursorPosition(e.target.value);
-		updateStats();
+
 		if (e.target.value.length >= currentText.length) {
 			endTest();
 		}
@@ -266,7 +287,6 @@ const Test = () => {
 
 	const handleSetRoundTime = (time: number) => {
 		setRoundTime(time);
-		setTimeLeft(time);
 	};
 
 	const handleSettings = (setting: string) => {
@@ -278,6 +298,15 @@ const Test = () => {
 			loadNewText();
 		}
 	};
+
+	useEffect(() => {
+		config.capitalsEnabled = capitalsEnabled;
+		config.punctuationEnabled = punctuationEnabled;
+		config.roundTime = roundTime;
+		config.gameMode = gameMode;
+		config.quoteLength = quoteLength;
+		setCookie("gameConfig", JSON.stringify(config));
+	}, [capitalsEnabled, punctuationEnabled, roundTime, gameMode, quoteLength]);
 
 	return (
 		<>
@@ -367,6 +396,7 @@ const Test = () => {
 							}`}
 						>
 							<SettingsCard
+								roundTime={roundTime}
 								setRoundTime={handleSetRoundTime}
 								capitalsEnabled={capitalsEnabled}
 								setCapitals={() => {
@@ -390,46 +420,16 @@ const Test = () => {
 									: "opacity-0 mb-0"
 							}`}
 						>
-							<ProgressBar timeLeft={timeLeft} roundTime={roundTime} />
+							<ProgressBar timeLeft={totalSeconds} roundTime={roundTime} />
 						</div>
 						{/* Typing Area */}
-						<div className='max-md:p-6 max-md:text-base bg-[#1a1a1a] border-[#333333] border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
-							<span
-								className='absolute top-8 bg-[#1a1a1a] left-6 h-[1.2em] animate-pulse transition-all duration-100 ease-in-out'
-								ref={cursorRef}
-							>
-								|
-							</span>
-							<div className='w-full' ref={textContentRef}>
-								{textContent.map((char, index) => (
-									<span key={index} className={char[1]}>
-										{char[0]}
-									</span>
-								))}
-							</div>
-							<textarea
-								className='fixed w-1 h-1 left-0 top-0 opacity-0 pointer-events-none'
-								ref={inputRef}
-								autoFocus
-								autoComplete='off'
-								spellCheck='false'
-								onChange={handleInput}
-								onKeyDown={(e) => {
-									if (e.ctrlKey && e.key === "z") {
-										e.preventDefault();
-										console.log("Undo is disabled");
-									}
-								}}
-								onCopy={(e) => {
-									e.preventDefault();
-									return false;
-								}}
-								onPaste={(e) => {
-									e.preventDefault();
-									return false;
-								}}
-							/>
-						</div>
+						<TextContent
+							textContent={textContent}
+							inputRef={inputRef}
+							textContentRef={textContentRef}
+							cursorRef={cursorRef}
+							handleInput={handleInput}
+						/>
 						{/* Control Buttons */}
 						<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
 							{/* <StartButton startTest={startTest} /> */}

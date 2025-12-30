@@ -2,6 +2,7 @@ import { faClock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface Props {
+	roundTime: number;
 	setRoundTime: (newTime: number) => void;
 	capitalsEnabled: boolean;
 	punctuationEnabled: boolean;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 const SettingsCard = ({
+	roundTime,
 	setRoundTime,
 	setCapitals,
 	setPunctuation,
@@ -35,7 +37,7 @@ const SettingsCard = ({
 					}
 					onClick={() => setGameMode("words")}
 				>
-					Words
+					Timed
 				</button>
 				<button
 					className={
@@ -59,7 +61,7 @@ const SettingsCard = ({
 					<select
 						className='border border-white rounded-lg bg-[#1a1a1a] mx-2 px-3 py-1 text-base font-semibold text-white'
 						id='roundTimerSelect'
-						defaultValue={60}
+						defaultValue={roundTime}
 						onChange={(e) => setRoundTime(Number(e.target.value))}
 					>
 						<option value='30'>30</option>
