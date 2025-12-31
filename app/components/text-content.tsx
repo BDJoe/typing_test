@@ -29,6 +29,7 @@ const TextContent = ({
 				))}
 			</div>
 			<textarea
+				name='text-input'
 				className='fixed w-1 h-1 left-0 top-0 opacity-0 pointer-events-none'
 				ref={inputRef}
 				autoFocus

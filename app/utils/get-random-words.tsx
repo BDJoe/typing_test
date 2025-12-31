@@ -1,4 +1,4 @@
-import data from "@/data/wordlist.json";
+import data from "@/utils/data/wordlist.json";
 
 export const getRandomWords = (
 	count: number,

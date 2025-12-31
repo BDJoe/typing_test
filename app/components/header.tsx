@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 const Header = () => {
 	const pathname = usePathname();
 	return (
-		<div className='absolute flex w-full h-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] items-center  bg-gray-800'>
+		<div className='flex w-full h-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] items-center bg-gray-800'>
 			<div className='text-white font-sans text-2xl font-bold p-10 w-[20%]'>
 				Typing Test
 			</div>
@@ -27,9 +27,11 @@ const Header = () => {
 					Stats
 				</Link>
 				<Link
-					href='/account'
+					href='/dashboard'
 					className={`font-sans text-2xl p-2 ${
-						pathname === "/account" ? "bg-amber-300 rounded-2xl text-black" : ""
+						pathname === "/dashboard"
+							? "bg-amber-300 rounded-2xl text-black"
+							: ""
 					}`}
 				>
 					Account
