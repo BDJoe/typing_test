@@ -14,9 +14,9 @@ const TextContent = ({
 	handleInput,
 }: Props) => {
 	return (
-		<div className='max-md:p-6 max-md:text-base bg-[#1a1a1a] border-[#333333] border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
+		<div className='max-md:p-6 max-md:text-base bg-accent border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
 			<span
-				className='absolute top-8 bg-[#1a1a1a] left-6 h-[1.2em] animate-pulse transition-all duration-100 ease-in-out'
+				className='absolute top-8 bg-none left-6 h-[1.2em] animate-pulse transition-all duration-50 ease-linear'
 				ref={cursorRef}
 			>
 				|

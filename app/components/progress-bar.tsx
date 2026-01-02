@@ -22,9 +22,9 @@ const ProgressBar = ({ timeLeft, roundTime }: Props) => {
 	}, [timeLeft, roundTime]);
 
 	return (
-		<div className='h-3 bg-[#222222] rounded-md mb-8'>
+		<div className='h-3 bg-accent rounded-md mb-5'>
 			<div
-				className='h-full bg-white rounded-md transition-[width] duration-300 ease-in-out w-0'
+				className='h-full bg-foreground rounded-md transition-[width] duration-300 ease-in-out w-0'
 				ref={progressRef}
 			></div>
 			<div

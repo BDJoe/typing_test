@@ -1,43 +1,87 @@
 "use client";
+import { signOut, useSession } from "@/lib/auth-client";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+	NavigationMenu,
+	NavigationMenuItem,
+	NavigationMenuLink,
+	NavigationMenuList,
+	navigationMenuTriggerStyle,
+} from "./ui/navigation-menu";
+import { Button } from "./ui/button";
 
 const Header = () => {
 	const pathname = usePathname();
+	const { data: session, isPending } = useSession();
+
 	return (
-		<div className='flex w-full h-20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] items-center bg-gray-800'>
-			<div className='text-white font-sans text-2xl font-bold p-10 w-[20%]'>
-				Typing Test
+		<NavigationMenu className='min-w-screen w-full h-20 bg-background border-b-2 border-accent justify-between px-4 shadow-xl'>
+			<div className='flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8'>
+				<h1 className='block text-primary font-bold text-2xl'>Typing Test</h1>
 			</div>
-			<div className='w-[60%] flex justify-center items-center gap-4'>
-				<Link
-					href='/'
-					className={`font-sans text-2xl p-2 ${
-						pathname === "/" ? "bg-amber-300 rounded-2xl text-black" : ""
-					}`}
-				>
-					Home
-				</Link>
-				<Link
-					href='/stats'
-					className={`font-sans text-2xl p-2 ${
-						pathname === "/stats" ? "bg-amber-300 rounded-2xl text-black" : ""
-					}`}
-				>
-					Stats
-				</Link>
-				<Link
-					href='/dashboard'
-					className={`font-sans text-2xl p-2 ${
-						pathname === "/dashboard"
-							? "bg-amber-300 rounded-2xl text-black"
-							: ""
-					}`}
-				>
-					Account
-				</Link>
-			</div>
-		</div>
+
+			<NavigationMenuList className='flex-wrap px-8'>
+				<NavigationMenuItem>
+					<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+						<Link href='/' className='text-xl'>
+							Home
+						</Link>
+					</NavigationMenuLink>
+				</NavigationMenuItem>
+
+				<NavigationMenuItem>
+					<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+						<Link href='/stats' className='text-xl'>
+							Stats
+						</Link>
+					</NavigationMenuLink>
+				</NavigationMenuItem>
+			</NavigationMenuList>
+
+			{session?.user.id && !isPending ? (
+				<NavigationMenuList className='flex-wrap px-8'>
+					<NavigationMenuItem>
+						<NavigationMenuLink asChild>
+							<Link
+								href='/dashboard'
+								className='bg-primary hover:bg-primary/80 text-accent rounded-2xl mr-3'
+							>
+								<FontAwesomeIcon icon={faUser} className={`text-xl`} />
+							</Link>
+						</NavigationMenuLink>
+					</NavigationMenuItem>
+
+					<NavigationMenuItem>
+						<NavigationMenuLink asChild>
+							<Button className='text-lg p-3' onClick={() => signOut()}>
+								Logout
+							</Button>
+						</NavigationMenuLink>
+					</NavigationMenuItem>
+				</NavigationMenuList>
+			) : (
+				<NavigationMenuList className='flex-wrap px-8'>
+					<NavigationMenuItem>
+						<NavigationMenuLink asChild>
+							<Button className='text-lg p-3'>
+								<Link href='/sign-in'>Login</Link>
+							</Button>
+						</NavigationMenuLink>
+					</NavigationMenuItem>
+
+					<NavigationMenuItem>
+						<NavigationMenuLink asChild>
+							<Button className='text-lg p-3'>
+								<Link href='/sign-up'>Register</Link>
+							</Button>
+						</NavigationMenuLink>
+					</NavigationMenuItem>
+				</NavigationMenuList>
+			)}
+		</NavigationMenu>
 	);
 };
 

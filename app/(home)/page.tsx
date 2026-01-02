@@ -53,8 +53,8 @@ const HomePage = () => {
 				// Set default config for unauthenticated users
 				setConfig({
 					gameMode: "words",
-					capitalsEnabled: true,
-					punctuationEnabled: true,
+					capitalsEnabled: false,
+					punctuationEnabled: false,
 					roundTime: 60,
 					quoteLength: "short",
 				});
@@ -174,7 +174,7 @@ const HomePage = () => {
 				.split("")
 				.map((char) => [
 					char,
-					"text-[#666666] relative transition-all duration-150 ease-in-out",
+					"text-foreground relative transition-all duration-150 ease-in-out",
 				])
 		);
 	}, [currentText]);
@@ -272,7 +272,7 @@ const HomePage = () => {
 				}
 			} else if (index < currentText.length) {
 				className =
-					"text-[#666666] relative transition-all duration-150 ease-in-out";
+					"text-foreground relative transition-all duration-150 ease-in-out";
 			}
 
 			return [char[0], className];
@@ -299,7 +299,7 @@ const HomePage = () => {
 			: chars[chars.length - 1].offsetTop;
 
 		cursorRef.current.style.left = `${offsetLeft - 7.5}px`;
-		cursorRef.current.style.top = `${offsetTop - 9}px`;
+		cursorRef.current.style.top = `${offsetTop - 7.5}px`;
 	};
 
 	// UPDATE STATS LOGIC
@@ -402,7 +402,7 @@ const HomePage = () => {
 	}
 
 	return (
-		<div className='flex max-w-screen min-h-[calc(100vh-80px)] mx-auto p-5 items-center justify-center max-md:py-8 max-md:px-6 max-md:m-4 font-mono leading-[1.6] relative'>
+		<div className='flex justify-center p-5 mt-20 font-mono'>
 			{/* Results Container */}
 			<div
 				className={`max-w-250 w-full bg-[#111111] rounded-2xl border-[#222222] border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out ${
@@ -448,7 +448,7 @@ const HomePage = () => {
 			>
 				{!isFocused && isActive && (
 					<div
-						className='absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center text-white z-10000'
+						className='absolute top-0 left-0 w-full h-full flex flex-col justify-center items-center z-10000'
 						onClick={() => {
 							inputRef.current?.focus();
 						}}
@@ -469,19 +469,7 @@ const HomePage = () => {
 					onFocus={handleFocus}
 				>
 					{/*  Main Test Container */}
-					<div
-						className='max-w-250 bg-[#111111] rounded-2xl border-[#222222] border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
-						onClick={() => inputRef.current?.focus()}
-					>
-						{/* Header */}
-						<div className='text-center mb-12'>
-							<h1 className='max-md:text-[2rem] text-4xl font-bold mb-2 tracking-tight'>
-								TypeTest
-							</h1>
-							<p className='text-[#888888] text-base font-normal'>
-								Measure your typing speed and accuracy
-							</p>
-						</div>
+					<div className='max-w-250' onClick={() => inputRef.current?.focus()}>
 						{/* Setting */}
 						<div
 							className={`transition-all duration-300 ease-in-out mb-0 ${
@@ -518,7 +506,6 @@ const HomePage = () => {
 						/>
 						{/* Control Buttons */}
 						<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-							{/* <StartButton startTest={startTest} /> */}
 							<ResetButton reset={loadNewText} />
 						</div>
 					</div>

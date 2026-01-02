@@ -5,6 +5,7 @@ import "@/globals.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import Header from "./components/header";
+import { Toaster } from "./components/ui/sonner";
 config.autoAddCss = false;
 
 const geistSans = Geist({
@@ -30,12 +31,21 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body
-				className={`${geistMono.variable} ${geistSans.variable} antialiased m-0 p-0`}
+				className={`${geistMono.variable} ${geistSans.variable} antialiased m-0 p-0 dark`}
 			>
-				<div className='min-h-screen min-w-screen bg-gradient-to-b from-[#242323] to-[#242222] text-white'>
+				<div className='min-h-screen min-w-screen bg-background text-foreground'>
 					<Header />
 					{children}
 				</div>
+				<Toaster
+					position='top-center'
+					toastOptions={{
+						style: {
+							backgroundColor: "#242323",
+							color: "white",
+						},
+					}}
+				/>
 			</body>
 		</html>
 	);

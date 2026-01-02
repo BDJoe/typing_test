@@ -1,31 +1,10 @@
 "use client";
+import StatsChart from "@/components/stats-chart";
 import { useSession } from "@/lib/auth-client";
-import { getResults } from "@/utils/server/actions";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 const StatsPage = () => {
 	const { data: session } = useSession();
-	const [results, setResults] = useState<
-		Array<{
-			wpm: number;
-			accuracy: number;
-			totalChars: number;
-			timeElapsed: number;
-			text: string;
-			timestamp: string;
-		}>
-	>([]);
-
-	useEffect(() => {
-		const fetchResults = async () => {
-			if (session?.user.id) {
-				const data = await getResults(session.user.id);
-				setResults(data);
-			}
-		};
-		fetchResults();
-	}, [session]);
 
 	if (!session) {
 		return (
@@ -41,35 +20,8 @@ const StatsPage = () => {
 		);
 	}
 	return (
-		<div className='flex items-center justify-center min-w-screen min-h-screen max-md:py-8 max-md:px-6 max-md:m-4 font-mono p-20 leading-[1.6]'>
-			{results.map((result, index) => (
-				<div
-					key={index}
-					className='border border-gray-300 rounded-lg p-6 mb-6 w-full max-w-md shadow-md'
-				>
-					<h2 className='text-2xl font-bold mb-4'>Test #{index + 1}</h2>
-					<p className='mb-2'>
-						<strong>WPM:</strong> {result.wpm}
-					</p>
-					<p className='mb-2'>
-						<strong>Accuracy:</strong> {result.accuracy}%
-					</p>
-					<p className='mb-2'>
-						<strong>Total Characters:</strong> {result.totalChars}
-					</p>
-
-					<p className='mb-2'>
-						<strong>Time Elapsed:</strong> {result.timeElapsed} seconds
-					</p>
-					<p className='mb-2'>
-						<strong>Timestamp:</strong>{" "}
-						{new Date(result.timestamp).toLocaleString()}
-					</p>
-					<p className='mt-4'>
-						<strong>Text:</strong> {result.text}
-					</p>
-				</div>
-			))}
+		<div className='flex items-center justify-center min-w-screen min-h-screen max-md:py-8 max-md:px-6 max-md:m-4 p-20 leading-[1.6]'>
+			<StatsChart />
 		</div>
 	);
 };
