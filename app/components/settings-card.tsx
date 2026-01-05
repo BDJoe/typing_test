@@ -1,6 +1,13 @@
 import { GameConfig } from "@/utils/types/types";
 import { faClock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "./ui/select";
 
 interface Props {
 	config: GameConfig;
@@ -61,17 +68,28 @@ const SettingsCard = ({ config, handleSettingChange }: Props) => {
 							icon={faClock}
 							className='text-foreground text-2xl'
 						/>
-						<select
-							className='border-2 rounded-lg mx-2 px-3 py-1 text-base font-semibold text-foreground bg-background'
-							id='roundTimerSelect'
-							value={config.roundTime}
-							onChange={(e) => setRoundTime(Number(e.target.value))}
+						<Select
+							onValueChange={(value) => setRoundTime(Number(value))}
+							value={config.roundTime.toString()}
 						>
-							<option value='30'>30</option>
-							<option value='60'>60</option>
-							<option value='90'>90</option>
-							<option value='120'>120</option>
-						</select>
+							<SelectTrigger className='border-2 rounded-lg mx-2 px-3 py-1 text-base font-semibold text-foreground bg-background'>
+								<SelectValue placeholder={config.roundTime} />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value='30' className='rounded-ls text-xl'>
+									30s
+								</SelectItem>
+								<SelectItem value='60' className='rounded-ls text-xl'>
+									60s
+								</SelectItem>
+								<SelectItem value='90' className='rounded-ls text-xl'>
+									90s
+								</SelectItem>
+								<SelectItem value='120' className='rounded-ls text-xl'>
+									120s
+								</SelectItem>
+							</SelectContent>
+						</Select>
 						<div>Time</div>
 					</div>
 					<div className=' px-4 text-base font-semibold flex items-center gap-3 w-fit h-full z-50'>

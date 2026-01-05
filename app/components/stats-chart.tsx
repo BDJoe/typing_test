@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
 import {
 	Card,
@@ -23,33 +23,10 @@ import { getResults } from "@/utils/server/actions";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 
-export function StatsChart() {
-	const { data: session } = useSession();
-	const [results, setResults] = useState<
-		Array<{
-			wpm: number;
-			accuracy: number;
-			totalChars: number;
-			timeElapsed: number;
-			text: string;
-			timestamp: string;
-		}>
-	>([]);
-
-	useEffect(() => {
-		const fetchResults = async () => {
-			if (session?.user.id) {
-				const data = await getResults(session.user.id);
-				data.sort(
-					(a, b) =>
-						new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-				);
-				setResults(data);
-			}
-		};
-		fetchResults();
-	}, [session]);
-
+export function StatsChart({ results }) {
+	results.sort(
+		(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+	);
 	const chartData = results.map((stat) => ({
 		date:
 			new Date(stat.timestamp).toLocaleDateString("en-US", {
@@ -60,6 +37,9 @@ export function StatsChart() {
 			new Date(stat.timestamp).toLocaleString("en-US", {
 				timeStyle: "short",
 			}),
+		month: new Date(stat.timestamp).toLocaleDateString("en-US", {
+			month: "short",
+		}),
 		WPM: stat.wpm,
 		accuracy: stat.accuracy,
 	}));
@@ -69,10 +49,6 @@ export function StatsChart() {
 			label: "WPM",
 			color: "var(--chart-1)",
 		},
-		accuracy: {
-			label: "Accuracy",
-			color: "var(--chart-2)",
-		},
 	} satisfies ChartConfig;
 
 	return (
@@ -81,35 +57,46 @@ export function StatsChart() {
 				<CardTitle>Test History</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<ChartContainer config={chartConfig} className='min-h-100 w-full'>
-					<BarChart accessibilityLayer data={chartData}>
+				<ChartContainer config={chartConfig} className='h-[200px] w-full'>
+					<AreaChart
+						accessibilityLayer
+						data={chartData}
+						margin={{ left: 12, right: 12 }}
+					>
+						<defs>
+							<linearGradient id='fillWPM' x1='0' y1='0' x2='0' y2='1'>
+								<stop
+									offset='5%'
+									stopColor='var(--color-WPM)'
+									stopOpacity={0.8}
+								/>
+								<stop
+									offset='95%'
+									stopColor='var(--color-WPM)'
+									stopOpacity={0.1}
+								/>
+							</linearGradient>
+						</defs>
 						<CartesianGrid vertical={false} />
 						<XAxis
 							dataKey='date'
-							tickLine={true}
-							tickMargin={10}
+							tickLine={false}
+							tickMargin={8}
 							axisLine={false}
-							tickFormatter={(value) =>
-								value.split(" ")[0] + " " + value.split(" ")[1]
-							}
+							minTickGap={32}
+							tickFormatter={(value) => value.slice(0, 3)}
 						/>
 
-						<ChartTooltip
-							content={<ChartTooltipContent />}
-							wrapperStyle={{
-								backgroundColor: "white",
-								borderRadius: 10,
-							}}
-						/>
+						<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
 						<ChartLegend content={<ChartLegendContent />} />
-						<Bar dataKey='WPM' stackId='a' fill='var(--color-WPM)' radius={4} />
-						<Bar
-							dataKey='accuracy'
-							stackId='b'
-							fill='var(--color-accuracy)'
-							radius={4}
+						<Area
+							dataKey='WPM'
+							type='natural'
+							fill='url(#fillWPM)'
+							fillOpacity={0.4}
+							stroke='var(--color-WPM)'
 						/>
-					</BarChart>
+					</AreaChart>
 				</ChartContainer>
 			</CardContent>
 		</Card>

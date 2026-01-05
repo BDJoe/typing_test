@@ -405,7 +405,7 @@ const HomePage = () => {
 		<div className='flex justify-center p-5 mt-20 font-mono'>
 			{/* Results Container */}
 			<div
-				className={`max-w-250 w-full bg-[#111111] rounded-2xl border-[#222222] border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out ${
+				className={`max-w-250 w-full bg-accent rounded-2xl border-2 p-12 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out ${
 					roundComplete && results
 						? "opacity-100"
 						: "opacity-0 pointer-events-none"
@@ -415,9 +415,7 @@ const HomePage = () => {
 					<h1 className='max-md:text-[2rem] text-4xl font-bold mb-2 tracking-tight'>
 						Test Complete
 					</h1>
-					<p className='text-[#888888] text-base font-normal'>
-						Check your results below
-					</p>
+					<p className='text-base font-normal'>Check your results below</p>
 				</div>
 				<div className='max-md:grid-cols-1 max-md:gap-4 grid auto-fit-180 gap-6 mb-12'>
 					<StatCard

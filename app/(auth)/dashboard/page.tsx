@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -30,16 +31,13 @@ const DashboardPage = () => {
 	const { user } = session;
 
 	return (
-		<div className='max-w-md h-screen flex items-center justify-center flex-col mx-auto p-6 space-y-4'>
+		<div className='max-w-md h-screen flex items-center justify-top flex-col mx-auto p-6 space-y-4'>
 			<h1 className='text-2xl font-bold'>Dashboard</h1>
 			<p>Welcome, {user.name || "User"}!</p>
 			<p>Email: {user.email}</p>
-			<button
-				onClick={() => signOut()}
-				className='w-full bg-white text-black font-medium rounded-md px-4 py-2 hover:bg-gray-200'
-			>
+			<Button onClick={() => signOut()} className=''>
 				Logout
-			</button>
+			</Button>
 		</div>
 	);
 };
