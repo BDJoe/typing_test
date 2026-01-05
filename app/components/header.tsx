@@ -56,7 +56,11 @@ const Header = () => {
 
 					<NavigationMenuItem>
 						<NavigationMenuLink asChild>
-							<Button className='text-lg p-3' onClick={() => signOut()}>
+							<Button
+								className='text-lg p-3'
+								onClick={() => signOut()}
+								variant='destructive'
+							>
 								Logout
 							</Button>
 						</NavigationMenuLink>

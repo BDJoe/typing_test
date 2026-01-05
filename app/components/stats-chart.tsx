@@ -1,16 +1,7 @@
 "use client";
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
-import { TrendingUp } from "lucide-react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts";
-
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	ChartContainer,
 	ChartLegend,
@@ -19,9 +10,6 @@ import {
 	ChartTooltipContent,
 	type ChartConfig,
 } from "@/components/ui/chart";
-import { getResults } from "@/utils/server/actions";
-import { useEffect, useState } from "react";
-import { useSession } from "@/lib/auth-client";
 
 export function StatsChart({ results }) {
 	results.sort(
@@ -31,15 +19,12 @@ export function StatsChart({ results }) {
 		date:
 			new Date(stat.timestamp).toLocaleDateString("en-US", {
 				month: "short",
-				day: "numeric",
+				day: "2-digit",
 			}) +
 			" " +
 			new Date(stat.timestamp).toLocaleString("en-US", {
 				timeStyle: "short",
 			}),
-		month: new Date(stat.timestamp).toLocaleDateString("en-US", {
-			month: "short",
-		}),
 		WPM: stat.wpm,
 		accuracy: stat.accuracy,
 	}));
@@ -58,11 +43,7 @@ export function StatsChart({ results }) {
 			</CardHeader>
 			<CardContent>
 				<ChartContainer config={chartConfig} className='h-[200px] w-full'>
-					<AreaChart
-						accessibilityLayer
-						data={chartData}
-						margin={{ left: 12, right: 12 }}
-					>
+					<AreaChart data={chartData} margin={{ left: 12, right: 12 }}>
 						<defs>
 							<linearGradient id='fillWPM' x1='0' y1='0' x2='0' y2='1'>
 								<stop
@@ -83,8 +64,10 @@ export function StatsChart({ results }) {
 							tickLine={false}
 							tickMargin={8}
 							axisLine={false}
-							minTickGap={32}
-							tickFormatter={(value) => value.slice(0, 3)}
+							minTickGap={64}
+							interval='preserveStartEnd'
+							padding={{ left: 5, right: 5 }}
+							tickFormatter={(value) => value.slice(0, 6)}
 						/>
 
 						<ChartTooltip cursor={false} content={<ChartTooltipContent />} />

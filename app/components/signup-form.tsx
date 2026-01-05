@@ -23,33 +23,14 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-
-const formSchema = z
-	.object({
-		name: z.string().min(1, "Name is required."),
-		email: z.email("Please enter a valid email address."),
-		password: z
-			.string()
-			.min(8, "Password must be at least 8 characters.")
-			.max(100, "Password must be at most 100 characters."),
-		confirmPassword: z.string().min(8, "Please confirm your password."),
-	})
-	.superRefine((data, ctx) => {
-		if (data.password !== data.confirmPassword) {
-			ctx.addIssue({
-				code: "custom",
-				message: "Passwords do not match.",
-				path: ["confirmPassword"],
-			});
-		}
-	});
+import { SignupSchema } from "@/utils/zod/signup-schema";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<z.infer<typeof SignupSchema>>({
+		resolver: zodResolver(SignupSchema),
 		defaultValues: {
 			name: "",
 			email: "",
@@ -59,7 +40,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 		mode: "onSubmit",
 	});
 
-	const onSubmit = async (data: z.infer<typeof formSchema>) => {
+	const onSubmit = async (data: z.infer<typeof SignupSchema>) => {
 		setLoading(true);
 
 		const res = await signUp.email({

@@ -10,55 +10,64 @@ import {
 } from "@/components/ui/card";
 import {
 	Field,
-	FieldDescription,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { signIn } from "@/lib/auth-client";
+import { resetPassword } from "@/lib/auth-client";
 import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { LoginSchema } from "@/utils/zod/login-schema";
+import { ResetPasswordSchema } from "@/utils/zod/reset-password-schema";
 
-export function LoginForm({
+const ResetPassword = ({
 	className,
 	...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div">) => {
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
-	const form = useForm<z.infer<typeof LoginSchema>>({
-		resolver: zodResolver(LoginSchema),
+	const form = useForm<z.infer<typeof ResetPasswordSchema>>({
+		resolver: zodResolver(ResetPasswordSchema),
 		defaultValues: {
-			email: "",
 			password: "",
+			confirmPassword: "",
 		},
 		mode: "onSubmit",
 	});
 
-	const onSubmit = async (data: z.infer<typeof LoginSchema>) => {
-		setLoading(true);
-		const res = await signIn.email({
-			email: data.email,
-			password: data.password,
-		});
-
-		if (res.error) {
-			toast.error(res.error.message || "Something went wrong", {
-				duration: 4000,
-				style: {
-					color: "red",
+	const onSubmit = async (data: z.infer<typeof ResetPasswordSchema>) => {
+		try {
+			await resetPassword(
+				{
+					newPassword: data.password,
+					token:
+						typeof window !== "undefined"
+							? new URLSearchParams(window.location.search).get("token") || ""
+							: "",
 				},
-			});
-			setLoading(false);
-		} else {
-			setLoading(false);
-			router.push("/dashboard");
+				{
+					onResponse: () => {
+						setLoading(false);
+					},
+					onRequest: () => {
+						setLoading(true);
+					},
+					onSuccess: () => {
+						toast.success("Password has been reset!");
+						router.replace("/sign-in");
+					},
+					onError: (ctx) => {
+						toast.error(ctx.error.message);
+					},
+				}
+			);
+		} catch (error) {
+			console.log(error);
+			toast.error("Something went wrong. Please try again.");
 		}
 	};
 
@@ -66,26 +75,24 @@ export function LoginForm({
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card>
 				<CardHeader>
-					<CardTitle>Login to your account</CardTitle>
-					<CardDescription>
-						Enter your email below to login to your account
-					</CardDescription>
+					<CardTitle>Reset Password</CardTitle>
+					<CardDescription>Enter a new password below</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<form id='login-form' onSubmit={form.handleSubmit(onSubmit)}>
 						<FieldGroup>
 							<Controller
-								name='email'
+								name='password'
 								control={form.control}
 								render={({ field, fieldState }) => (
 									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='email'>Email</FieldLabel>
+										<FieldLabel htmlFor='password'>Password</FieldLabel>
 										<Input
 											{...field}
-											id='email'
+											id='password'
 											aria-invalid={fieldState.invalid}
-											type='email'
-											placeholder='m@example.com'
+											type='password'
+											placeholder='Enter new password'
 											required
 										/>
 										{fieldState.invalid && (
@@ -95,24 +102,19 @@ export function LoginForm({
 								)}
 							/>
 							<Controller
-								name='password'
+								name='confirmPassword'
 								control={form.control}
 								render={({ field, fieldState }) => (
 									<Field data-invalid={fieldState.invalid}>
-										<div className='flex items-center'>
-											<FieldLabel htmlFor='password'>Password</FieldLabel>
-											<Link
-												href='/forgot-password'
-												className='ml-auto inline-block text-sm underline-offset-4 hover:underline'
-											>
-												Forgot your password?
-											</Link>
-										</div>
+										<FieldLabel htmlFor='confirmPassword'>
+											Confirm Password
+										</FieldLabel>
 										<Input
 											{...field}
-											id='password'
-											type='password'
+											id='confirmPassword'
 											aria-invalid={fieldState.invalid}
+											type='password'
+											placeholder='Confirm new password'
 											required
 										/>
 										{fieldState.invalid && (
@@ -125,17 +127,13 @@ export function LoginForm({
 					</form>
 					<Field orientation='vertical' className='mt-5'>
 						<Button type='submit' form='login-form' disabled={loading}>
-							{loading ? "Logging in..." : "Login"}
+							{loading ? "Resetting password..." : "Reset Password"}
 						</Button>
-						<Button variant='outline' type='button' disabled={loading}>
-							Login with Google
-						</Button>
-						<FieldDescription className='text-center'>
-							Don&apos;t have an account? <Link href='/sign-up'>Sign up</Link>
-						</FieldDescription>
 					</Field>
 				</CardContent>
 			</Card>
 		</div>
 	);
-}
+};
+
+export default ResetPassword;
