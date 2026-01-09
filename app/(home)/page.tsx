@@ -16,14 +16,15 @@ import { useTimer } from "react-timer-hook";
 import TextContent from "@/components/text-content";
 import { useSession } from "@/lib/auth-client";
 import Loading from "@/utils/loading";
+import RoundChart from "@/components/round-chart";
 
 const HomePage = () => {
 	const { data: session, isPending } = useSession();
 	const [config, setConfig] = useState<GameConfig>({
 		gameMode: "words",
-		capitalsEnabled: true,
-		punctuationEnabled: true,
-		roundTime: 60,
+		capitalsEnabled: false,
+		punctuationEnabled: false,
+		roundTime: 30,
 		quoteLength: "short",
 	});
 
@@ -45,7 +46,7 @@ const HomePage = () => {
 						gameMode: "words",
 						capitalsEnabled: false,
 						punctuationEnabled: false,
-						roundTime: 60,
+						roundTime: 30,
 						quoteLength: "short",
 					});
 				}
@@ -55,7 +56,7 @@ const HomePage = () => {
 					gameMode: "words",
 					capitalsEnabled: false,
 					punctuationEnabled: false,
-					roundTime: 60,
+					roundTime: 30,
 					quoteLength: "short",
 				});
 			}
@@ -87,6 +88,10 @@ const HomePage = () => {
 	const [isPaused, setIsPaused] = useState(false);
 	const [results, setResults] = useState<RoundResult | null>(null);
 	const [roundComplete, setRoundComplete] = useState(false);
+
+	const [roundStats, setRoundStats] = useState<
+		Array<{ time: number; errors: number; wpm: number }>
+	>([]);
 	// const [gameMode, setGameMode] = useState(config.gameMode);
 	// const [quoteLength, setQuoteLength] = useState(
 	// 	config.quoteLength
@@ -96,21 +101,7 @@ const HomePage = () => {
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const cursorRef = useRef<HTMLDivElement>(null);
 	const textContentRef = useRef<HTMLDivElement>(null);
-
-	// useEffect(() => {
-	// 	const fetchGameConfig = async () => {
-	// 		const configCookie = await getCookie("gameConfig");
-	// 		if (configCookie) {
-	// 			const config: GameConfig = JSON.parse(configCookie);
-	// 			setCapitalsEnabled(config.capitalsEnabled);
-	// 			setPunctuationEnabled(config.punctuationEnabled);
-	// 			setRoundTime(config.roundTime);
-	// 			setGameMode(config.gameMode);
-	// 			setQuoteLength(config.quoteLength);
-	// 		}
-	// 	};
-	// 	fetchGameConfig();
-	// }, [config]);
+	const resetBtnRef = useRef<HTMLButtonElement>(null);
 
 	// TIMER LOGIC
 	const expiryTimestamp = new Date();
@@ -172,10 +163,17 @@ const HomePage = () => {
 		setTextContent(
 			currentText
 				.split("")
-				.map((char) => [
-					char,
-					"text-foreground relative transition-all duration-150 ease-in-out",
-				])
+				.map((char) =>
+					char === "—"
+						? [
+								"-",
+								"text-foreground relative transition-all duration-150 ease-in-out",
+						  ]
+						: [
+								char,
+								"text-foreground relative transition-all duration-150 ease-in-out",
+						  ]
+				)
 		);
 	}, [currentText]);
 
@@ -197,6 +195,7 @@ const HomePage = () => {
 		setIsPaused(false);
 		setRoundComplete(false);
 		setResults(null);
+		setRoundStats([]);
 		setErrors(0);
 		setTotalChars(0);
 		if (inputRef.current) {
@@ -248,10 +247,26 @@ const HomePage = () => {
 	};
 
 	useEffect(() => {
-		if (!isFocused) {
+		if (!isFocused && !roundComplete) {
 			inputRef.current?.focus();
 		}
 	}, [isFocused]);
+
+	useEffect(() => {
+		if (isActive && !roundComplete) {
+			const timeElapsed =
+				config.gameMode === "words"
+					? (config.roundTime - totalSeconds) / 60
+					: (3600 - totalSeconds) / 60;
+			const grossWPM = totalChars / 5 / timeElapsed;
+			if (timeElapsed > 0) {
+				setRoundStats([
+					...roundStats,
+					{ time: timeElapsed * 60, errors: errors, wpm: grossWPM },
+				]);
+			}
+		}
+	}, [totalSeconds]);
 
 	// UPDATE DISPLAY LOGIC
 	const updateDisplay = (input: string) => {
@@ -314,6 +329,15 @@ const HomePage = () => {
 			totalChars > 0
 				? Math.round(((totalChars - errors) / totalChars) * 100)
 				: 100;
+		const roundTimePerSecond = roundStats.map((stat) => {
+			return stat.time;
+		});
+		const errorsPerSecond = roundStats.map((stat) => {
+			return stat.errors;
+		});
+		const wpmPerSecond = roundStats.map((stat) => {
+			return stat.wpm;
+		});
 
 		setResults({
 			wpm: netWPM,
@@ -323,6 +347,9 @@ const HomePage = () => {
 			gameConfig: config,
 			text: currentText.slice(0, totalChars),
 			timestamp: new Date(),
+			roundTimePerSecond,
+			errorsPerSecond,
+			wpmPerSecond,
 		});
 
 		if (session?.user.id !== undefined) {
@@ -335,6 +362,9 @@ const HomePage = () => {
 					gameConfig: config,
 					text: currentText.slice(0, totalChars),
 					timestamp: new Date(),
+					roundTimePerSecond,
+					errorsPerSecond,
+					wpmPerSecond,
 				},
 				session?.user.id
 			);
@@ -434,8 +464,9 @@ const HomePage = () => {
 						label='Characters'
 					/>
 				</div>
+
 				<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-					<ResetButton reset={loadNewText} />
+					<ResetButton reset={loadNewText} buttonRef={resetBtnRef} />
 				</div>
 			</div>
 			{/* Test Container Wrapper */}
@@ -504,7 +535,7 @@ const HomePage = () => {
 						/>
 						{/* Control Buttons */}
 						<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-							<ResetButton reset={loadNewText} />
+							<ResetButton reset={loadNewText} buttonRef={resetBtnRef} />
 						</div>
 					</div>
 				</div>

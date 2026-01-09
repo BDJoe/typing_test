@@ -10,8 +10,13 @@ import {
 	ChartTooltipContent,
 	type ChartConfig,
 } from "@/components/ui/chart";
+import { RoundResult } from "@/utils/types/types";
 
-export function StatsChart({ results }) {
+interface Props {
+	results: Array<RoundResult>;
+}
+
+export function StatsChart({ results }: Props) {
 	results.sort(
 		(a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
 	);
@@ -32,7 +37,7 @@ export function StatsChart({ results }) {
 	const chartConfig = {
 		WPM: {
 			label: "WPM",
-			color: "var(--chart-1)",
+			color: "var(--chart-2)",
 		},
 	} satisfies ChartConfig;
 
@@ -49,12 +54,12 @@ export function StatsChart({ results }) {
 								<stop
 									offset='5%'
 									stopColor='var(--color-WPM)'
-									stopOpacity={0.8}
+									stopOpacity={0.9}
 								/>
 								<stop
 									offset='95%'
 									stopColor='var(--color-WPM)'
-									stopOpacity={0.1}
+									stopOpacity={0.6}
 								/>
 							</linearGradient>
 						</defs>

@@ -1,4 +1,5 @@
 export type RoundResult = {
+	id?: number;
 	wpm: number;
 	accuracy: number;
 	totalChars: number;
@@ -6,6 +7,9 @@ export type RoundResult = {
 	gameConfig: GameConfig;
 	text: string;
 	timestamp: Date;
+	roundTimePerSecond: Array<number>;
+	errorsPerSecond: Array<number>;
+	wpmPerSecond: Array<number>;
 };
 
 export type GameConfig = {

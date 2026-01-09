@@ -7,23 +7,16 @@ import StatCard from "@/components/stat-card";
 import { useEffect, useState } from "react";
 import { getResults } from "@/utils/server/actions";
 import Loading from "@/utils/loading";
-import { set } from "zod";
+import { RoundResult } from "@/utils/types/types";
+import RoundChart from "@/components/round-chart";
 
 const StatsPage = () => {
 	const { data: session, isPending } = useSession();
-	const [results, setResults] = useState<
-		Array<{
-			wpm: number;
-			accuracy: number;
-			totalChars: number;
-			timeElapsed: number;
-			text: string;
-			timestamp: string;
-		}>
-	>([]);
+	const [results, setResults] = useState<Array<RoundResult>>([]);
 	const [averageAccuracy, setAverageAccuracy] = useState(0);
 	const [averageWPM, setAverageWPM] = useState(0);
 	const [totalTests, setTotalTests] = useState(0);
+	const [selectedResult, setSelectedResult] = useState<RoundResult>();
 
 	useEffect(() => {
 		const fetchResults = async () => {
@@ -37,10 +30,20 @@ const StatsPage = () => {
 				);
 				setTotalTests(data.length);
 				setResults(data);
+				setSelectedResult(data[0]);
 			}
 		};
 		fetchResults();
 	}, [session]);
+
+	const handleSelection = (id: number) => {
+		const selected = results.find((result) => id === result.id);
+		setSelectedResult(selected);
+	};
+
+	if (isPending) {
+		return <Loading />;
+	}
 
 	if (!session && !isPending) {
 		return (
@@ -56,13 +59,18 @@ const StatsPage = () => {
 		);
 	}
 
-	if (isPending) {
-		return <Loading />;
+	if (results.length < 1) {
+		return (
+			<div className='max-w-md h-screen flex items-center justify-center mx-auto p-6 space-y-4'>
+				<p>No Stats Available.</p>
+			</div>
+		);
 	}
 
 	return (
 		<div className='grid grid-cols-1 px-10 items-center justify-center mt-5 max-w-full'>
 			<StatsChart results={results} />
+			{selectedResult && <RoundChart result={selectedResult} />}
 			<div className='flex items-center justify-center gap-5 my-5'>
 				<StatCard
 					icon='fa-solid fa-file-lines'
@@ -86,10 +94,14 @@ const StatsPage = () => {
 				<StatCard
 					icon='fa-solid fa-bullseye'
 					label='Average Accuracy'
-					value={averageAccuracy}
+					value={averageAccuracy.toFixed(2) + "%"}
 				/>
 			</div>
-			<StatsTable results={results} />
+			<StatsTable
+				results={results}
+				setSelected={handleSelection}
+				selectedRowId={selectedResult?.id ? selectedResult.id : 0}
+			/>
 		</div>
 	);
 };

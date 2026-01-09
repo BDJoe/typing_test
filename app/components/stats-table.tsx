@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { useSession } from "@/lib/auth-client";
-import { getResults } from "@/utils/server/actions";
+import { useState } from "react";
 import {
 	useReactTable,
 	getCoreRowModel,
@@ -65,9 +63,11 @@ const columns: ColumnDef<TData, TValue>[] = [
 
 interface Props {
 	results: TData[];
+	setSelected: (id: number) => void;
+	selectedRowId: number;
 }
 
-const StatsTable = ({ results }: Props) => {
+const StatsTable = ({ results, setSelected, selectedRowId }: Props) => {
 	results.sort(
 		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
 	);
@@ -111,6 +111,12 @@ const StatsTable = ({ results }: Props) => {
 								<TableRow
 									key={row.id}
 									data-state={row.getIsSelected() && "selected"}
+									onClick={() => setSelected(row.original.id)}
+									className={
+										row.original.id === selectedRowId
+											? "bg-accent-foreground text-accent hover:bg-accent-foreground/80 hover:text-accent/80"
+											: ""
+									}
 								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>

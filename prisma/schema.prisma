@@ -79,14 +79,19 @@ model TestResult {
 	accuracy      Int
 	totalChars    Int
 	timeElapsed   Int
+  gameConfig    Json?
 	text          String
 	timestamp     DateTime @default(now())
+  roundTimePerSecond    Int[]
+  wpmPerSecond      Int[]
+  errorsPerSecond    Int[]
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("test_result")
 }
+
 
 model GameSettings {
   id            Int @id @default(autoincrement())
