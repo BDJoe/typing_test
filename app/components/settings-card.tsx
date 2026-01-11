@@ -1,4 +1,4 @@
-import { GameConfig } from "@/utils/types/types";
+import { GameConfig } from "@/lib/types/types";
 import { faClock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,18 +11,18 @@ import {
 
 interface Props {
 	config: GameConfig;
-	handleSettingChange: (setting: string, value?: any) => void;
+	handleSettingChange: (setting: string, value: string) => void;
 }
 
 const SettingsCard = ({ config, handleSettingChange }: Props) => {
 	const setRoundTime = (newTime: number) => {
-		handleSettingChange("roundTime", newTime);
+		handleSettingChange("roundTime", newTime.toString());
 	};
 	const setCapitals = () => {
-		handleSettingChange("capitalsEnabled");
+		handleSettingChange("capitalsEnabled", "");
 	};
 	const setPunctuation = () => {
-		handleSettingChange("punctuationEnabled");
+		handleSettingChange("punctuationEnabled", "");
 	};
 	const setGameMode = (mode: string) => {
 		handleSettingChange("gameMode", mode);

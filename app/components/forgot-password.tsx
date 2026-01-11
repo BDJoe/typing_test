@@ -21,7 +21,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ForgotPasswordSchema } from "@/utils/zod/fogot-password-schema";
+import { ForgotPasswordSchema } from "@/lib/zod/fogot-password-schema";
 
 const ForgotPassword = ({
 	className,

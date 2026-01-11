@@ -24,7 +24,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { LoginSchema } from "@/utils/zod/login-schema";
+import { LoginSchema } from "@/lib/zod/login-schema";
 
 export function LoginForm({
 	className,
@@ -58,7 +58,7 @@ export function LoginForm({
 			setLoading(false);
 		} else {
 			setLoading(false);
-			router.push("/dashboard");
+			router.push("/");
 		}
 	};
 
@@ -126,9 +126,6 @@ export function LoginForm({
 					<Field orientation='vertical' className='mt-5'>
 						<Button type='submit' form='login-form' disabled={loading}>
 							{loading ? "Logging in..." : "Login"}
-						</Button>
-						<Button variant='outline' type='button' disabled={loading}>
-							Login with Google
 						</Button>
 						<FieldDescription className='text-center'>
 							Don&apos;t have an account? <Link href='/sign-up'>Sign up</Link>

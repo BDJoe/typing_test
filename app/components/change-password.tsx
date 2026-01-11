@@ -21,7 +21,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ChangePasswordSchema } from "@/utils/zod/change-password-schema";
+import { ChangePasswordSchema } from "@/lib/zod/change-password-schema";
 
 const ChangePassword = ({
 	className,

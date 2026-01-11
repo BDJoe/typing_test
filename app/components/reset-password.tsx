@@ -22,7 +22,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ResetPasswordSchema } from "@/utils/zod/reset-password-schema";
+import { ResetPasswordSchema } from "@/lib/zod/reset-password-schema";
 
 const ResetPassword = ({
 	className,

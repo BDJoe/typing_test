@@ -5,9 +5,9 @@ import StatsTable from "@/components/stats-table";
 import Link from "next/link";
 import StatCard from "@/components/stat-card";
 import { useEffect, useState } from "react";
-import { getResults } from "@/utils/server/actions";
-import Loading from "@/utils/loading";
-import { RoundResult } from "@/utils/types/types";
+import { getResults } from "@/lib/server/actions";
+import Loading from "@/components/loading";
+import { RoundResult } from "@/lib/types/types";
 import RoundChart from "@/components/round-chart";
 
 const StatsPage = () => {

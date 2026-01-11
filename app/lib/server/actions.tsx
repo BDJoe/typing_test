@@ -1,7 +1,40 @@
 "use server";
 import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma";
-import { GameConfig, RoundResult } from "@/utils/types/types";
+import { GameConfig, RoundResult } from "@/lib/types/types";
+import { promises as fs } from "fs";
+
+const filePath: string = process.cwd() + "/app/lib/data/oxford-5k.txt";
+
+export const getRandomWords = async (
+	count: number,
+	enableCapitals: boolean,
+	enablePunctuation: boolean
+) => {
+	const content: string = await fs.readFile(filePath, "utf-8");
+	const data = content.split(/\r?\n/);
+	const words = [];
+	for (let i = 0; i < count; i++) {
+		const randomIndex = Math.floor(Math.random() * data.length);
+		if (enableCapitals) {
+			if (randomIndex % 3 === 0)
+				words.push(
+					data[randomIndex][0].toUpperCase() + data[randomIndex].slice(1)
+				);
+			else words.push(data[randomIndex].toLowerCase());
+		} else {
+			words.push(data[randomIndex].toLowerCase());
+		}
+		if (enablePunctuation) {
+			const punctuationMarks = [".", ",", "!", "?", ";", ":"];
+			if (randomIndex % 4 === 0) {
+				const punctIndex = Math.floor(Math.random() * punctuationMarks.length);
+				words[words.length - 1] += punctuationMarks[punctIndex];
+			}
+		}
+	}
+	return words.join(" ");
+};
 
 // TODO: Remove the line below once proper SSL certificates are set up on the API server
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

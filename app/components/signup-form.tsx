@@ -23,7 +23,7 @@ import * as z from "zod";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { SignupSchema } from "@/utils/zod/signup-schema";
+import { SignupSchema } from "@/lib/zod/signup-schema";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 	const router = useRouter();
@@ -59,7 +59,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 			setLoading(false);
 		} else {
 			setLoading(false);
-			router.push("/dashboard");
+			router.push("/");
 		}
 	};
 
@@ -162,9 +162,6 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 							<Field>
 								<Button type='submit' form='signup-form' disabled={loading}>
 									{loading ? "Signing up..." : "Sign Up"}
-								</Button>
-								<Button variant='outline' type='button' disabled={loading}>
-									Sign up with Google
 								</Button>
 								<FieldDescription className='px-6 text-center'>
 									Already have an account? <Link href='/sign-in'>Sign in</Link>

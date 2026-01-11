@@ -3,20 +3,20 @@ import { useEffect, useRef, useState } from "react";
 import ResetButton from "@/components/buttons/reset-button";
 import ProgressBar from "@/components/progress-bar";
 import SettingsCard from "@/components/settings-card";
-import { GameConfig, RoundResult } from "@/utils/types/types";
+import { GameConfig, RoundResult } from "@/lib/types/types";
 import StatCard from "@/components/stat-card";
 import {
+	getRandomWords,
 	getRandomQuote,
 	getSettings,
 	saveResults,
 	saveSettings,
-} from "@/utils/server/actions";
-import { getRandomWords } from "@/utils/get-random-words";
+} from "@/lib/server/actions";
 import { useTimer } from "react-timer-hook";
 import TextContent from "@/components/text-content";
 import { useSession } from "@/lib/auth-client";
-import Loading from "@/utils/loading";
-import RoundChart from "@/components/round-chart";
+import Loading from "@/components/loading";
+import Link from "next/link";
 
 const HomePage = () => {
 	const { data: session, isPending } = useSession();
@@ -150,7 +150,7 @@ const HomePage = () => {
 				return "Error fetching new text.";
 			}
 		} else if (config.gameMode === "words") {
-			const text = getRandomWords(
+			const text = await getRandomWords(
 				50,
 				config.capitalsEnabled,
 				config.punctuationEnabled
@@ -384,7 +384,7 @@ const HomePage = () => {
 		}
 	};
 
-	const handleSettings = (setting: string, value: any) => {
+	const handleSettings = (setting: string, value: string) => {
 		let newConfig;
 		if (setting === "capitalsEnabled") {
 			newConfig = {
@@ -417,7 +417,7 @@ const HomePage = () => {
 		} else {
 			newConfig = {
 				...config,
-				roundTime: value,
+				roundTime: parseInt(value),
 			};
 		}
 		setConfig(newConfig);
@@ -464,7 +464,24 @@ const HomePage = () => {
 						label='Characters'
 					/>
 				</div>
-
+				{session?.user === undefined && (
+					<div className='text-center mb-5'>
+						<Link
+							href='/sign-up'
+							className='text-primary font-bold hover:text-primary/80 cursor-pointer'
+						>
+							Register
+						</Link>{" "}
+						or{" "}
+						<Link
+							href='/sign-in'
+							className='text-primary font-bold hover:text-primary/80 cursor-pointer'
+						>
+							Sign In
+						</Link>{" "}
+						to save stats.
+					</div>
+				)}
 				<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
 					<ResetButton reset={loadNewText} buttonRef={resetBtnRef} />
 				</div>

@@ -10,7 +10,7 @@ import {
 	ChartTooltipContent,
 	type ChartConfig,
 } from "@/components/ui/chart";
-import { RoundResult } from "@/utils/types/types";
+import { RoundResult } from "@/lib/types/types";
 
 interface Props {
 	results: Array<RoundResult>;
