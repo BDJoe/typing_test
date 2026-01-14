@@ -1,6 +1,7 @@
 "use client";
 
 import ChangePassword from "@/components/change-password";
+import DeleteAccount from "@/components/delete-account";
 import { Button } from "@/components/ui/button";
 import { signOut, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,6 @@ import { useEffect, useState } from "react";
 const DashboardPage = () => {
 	const router = useRouter();
 	const { data: session, isPending } = useSession();
-	const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
 	useEffect(() => {
 		if (!isPending && !session?.user) {
@@ -37,20 +37,8 @@ const DashboardPage = () => {
 			<h1 className='text-2xl font-bold'>Dashboard</h1>
 			<p>Welcome, {user.name || "User"}!</p>
 			<p>Email: {user.email}</p>
-			<Button
-				onClick={() => setChangePasswordOpen(true)}
-				className={`${changePasswordOpen ? "opacity-0" : ""} transisition-all`}
-			>
-				Change Password
-			</Button>
-			<ChangePassword
-				onSubmit={() => {
-					setChangePasswordOpen(false);
-				}}
-				className={`${
-					changePasswordOpen ? "" : "opacity-0"
-				} relative w-full transition-all`}
-			/>
+			<ChangePassword />
+			<DeleteAccount />
 		</div>
 	);
 };

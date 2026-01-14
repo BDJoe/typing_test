@@ -8,4 +8,5 @@ export const {
 	requestPasswordReset,
 	resetPassword,
 	changePassword,
+	deleteUser,
 } = createAuthClient();

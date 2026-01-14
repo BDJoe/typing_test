@@ -1,13 +1,5 @@
 "use client";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import {
 	Field,
 	FieldError,
@@ -22,13 +14,19 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ChangePasswordSchema } from "@/lib/zod/change-password-schema";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "./ui/dialog";
 
-const ChangePassword = ({
-	className,
-	onSubmit,
-	...props
-}: React.ComponentProps<"div">) => {
+const ChangePassword = () => {
 	const [loading, setLoading] = useState(false);
+	const [open, setOpen] = useState(false);
 	const form = useForm<z.infer<typeof ChangePasswordSchema>>({
 		resolver: zodResolver(ChangePasswordSchema),
 		defaultValues: {
@@ -57,7 +55,7 @@ const ChangePassword = ({
 					onSuccess: (e) => {
 						toast.success("Password has been changed!");
 						form.reset();
-						onSubmit();
+						setOpen(false);
 					},
 					onError: (ctx) => {
 						toast.error(ctx.error.message);
@@ -71,89 +69,105 @@ const ChangePassword = ({
 	};
 
 	return (
-		<div className={cn("flex flex-col gap-6", className)} {...props}>
-			<Card>
-				<CardHeader>
-					<CardTitle>Change Password</CardTitle>
-					<CardDescription>
-						Enter your old and new passwords below
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form id='login-form' onSubmit={form.handleSubmit(handleSubmit)}>
-						<FieldGroup>
-							<Controller
-								name='oldPassword'
-								control={form.control}
-								render={({ field, fieldState }) => (
-									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='password'>Current Password</FieldLabel>
-										<Input
-											{...field}
-											id='oldPassword'
-											aria-invalid={fieldState.invalid}
-											type='password'
-											placeholder='Enter current password'
-											required
-										/>
-										{fieldState.invalid && (
-											<FieldError errors={[fieldState.error]} />
-										)}
-									</Field>
-								)}
-							/>
-							<Controller
-								name='newPassword'
-								control={form.control}
-								render={({ field, fieldState }) => (
-									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='newPassword'>New Password</FieldLabel>
-										<Input
-											{...field}
-											id='newPassword'
-											aria-invalid={fieldState.invalid}
-											type='password'
-											placeholder='Enter new password'
-											required
-										/>
-										{fieldState.invalid && (
-											<FieldError errors={[fieldState.error]} />
-										)}
-									</Field>
-								)}
-							/>
-							<Controller
-								name='confirmNewPassword'
-								control={form.control}
-								render={({ field, fieldState }) => (
-									<Field data-invalid={fieldState.invalid}>
-										<FieldLabel htmlFor='confirmNewPassword'>
-											Confirm New Password
-										</FieldLabel>
-										<Input
-											{...field}
-											id='confirmNewPassword'
-											aria-invalid={fieldState.invalid}
-											type='password'
-											placeholder='Confirm new password'
-											required
-										/>
-										{fieldState.invalid && (
-											<FieldError errors={[fieldState.error]} />
-										)}
-									</Field>
-								)}
-							/>
-						</FieldGroup>
-					</form>
-					<Field orientation='vertical' className='mt-5'>
-						<Button type='submit' form='login-form' disabled={loading}>
-							{loading ? "Changing password..." : "Change Password"}
-						</Button>
-					</Field>
-				</CardContent>
-			</Card>
-		</div>
+		<Dialog
+			open={open}
+			onOpenChange={(open) => {
+				setOpen(open);
+				form.reset();
+			}}
+		>
+			<form
+				id='change-password-form'
+				onSubmit={form.handleSubmit(handleSubmit)}
+			>
+				<DialogTrigger asChild>
+					<Button>Change Password</Button>
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Change Password</DialogTitle>
+					</DialogHeader>
+					<FieldGroup>
+						<Controller
+							name='oldPassword'
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor='password'>Current Password</FieldLabel>
+									<Input
+										{...field}
+										id='oldPassword'
+										aria-invalid={fieldState.invalid}
+										type='password'
+										placeholder='Enter current password'
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+						<Controller
+							name='newPassword'
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor='newPassword'>New Password</FieldLabel>
+									<Input
+										{...field}
+										id='newPassword'
+										aria-invalid={fieldState.invalid}
+										type='password'
+										placeholder='Enter new password'
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+						<Controller
+							name='confirmNewPassword'
+							control={form.control}
+							render={({ field, fieldState }) => (
+								<Field data-invalid={fieldState.invalid}>
+									<FieldLabel htmlFor='confirmNewPassword'>
+										Confirm New Password
+									</FieldLabel>
+									<Input
+										{...field}
+										id='confirmNewPassword'
+										aria-invalid={fieldState.invalid}
+										type='password'
+										placeholder='Confirm new password'
+										required
+									/>
+									{fieldState.invalid && (
+										<FieldError errors={[fieldState.error]} />
+									)}
+								</Field>
+							)}
+						/>
+					</FieldGroup>
+					<DialogFooter>
+						<Field orientation='vertical' className='mt-5'>
+							<DialogClose asChild>
+								<Button variant='outline'>Cancel</Button>
+							</DialogClose>
+							<Button
+								type='submit'
+								form='change-password-form'
+								disabled={loading}
+							>
+								{loading ? "Changing password..." : "Submit"}
+							</Button>
+						</Field>
+					</DialogFooter>
+				</DialogContent>
+			</form>
+		</Dialog>
 	);
 };
 

@@ -14,14 +14,17 @@ const TextContent = ({
 	handleInput,
 }: Props) => {
 	return (
-		<div className='max-md:p-6 max-md:text-base bg-accent border-2 rounded-xl p-8 mb-8 text-2xl leading-[1.8] relative min-h-30 flex items-center'>
+		<div className='bg-accent border-2 rounded-xl mb-8 text-3xl leading-[1.8] relative p-6 flex items-center'>
 			<span
-				className='absolute top-8 bg-none left-6 h-[1.2em] animate-pulse transition-all duration-50 ease-linear'
+				className='absolute top-6 bg-none left-4 h-[1.2em] animate-caret-blink transition-all duration-50 ease-linear'
 				ref={cursorRef}
 			>
 				|
 			</span>
-			<div className='w-full' ref={textContentRef}>
+			<div
+				className='w-full max-h-[5.4em] overflow-hidden'
+				ref={textContentRef}
+			>
 				{textContent.map((char, index) => (
 					<span key={index} className={char[1]}>
 						{char[0]}

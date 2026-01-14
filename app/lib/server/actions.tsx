@@ -97,7 +97,7 @@ export const saveResults = async (result: RoundResult, userId: string) => {
 			wpm: result.wpm,
 			accuracy: result.accuracy,
 			totalChars: result.totalChars,
-			timeElapsed: result.timeElapsed * 60,
+			timeElapsed: result.timeElapsed,
 			text: result.text,
 			gameConfig: config,
 			timestamp: result.timestamp,

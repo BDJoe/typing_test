@@ -12,7 +12,7 @@ import {
 	saveResults,
 	saveSettings,
 } from "@/lib/server/actions";
-import { useTimer } from "react-timer-hook";
+import { useStopwatch } from "react-timer-hook";
 import TextContent from "@/components/text-content";
 import { useSession } from "@/lib/auth-client";
 import Loading from "@/components/loading";
@@ -29,73 +29,58 @@ const HomePage = () => {
 	});
 
 	useEffect(() => {
-		const fetchSettings = async () => {
+		const setupTest = async () => {
+			let newConfig;
 			if (session?.user.id !== undefined && !isPending) {
 				const settings = await getSettings(session.user.id);
 				if (settings) {
-					setConfig({
+					newConfig = {
 						gameMode: settings.mode,
 						capitalsEnabled: settings.capitalsEnabled,
 						punctuationEnabled: settings.punctuationEnabled,
 						roundTime: settings.roundTime,
 						quoteLength: settings.quoteLength,
-					});
+					};
 				} else {
 					// Set default config if no settings found
-					setConfig({
+					newConfig = {
 						gameMode: "words",
 						capitalsEnabled: false,
 						punctuationEnabled: false,
 						roundTime: 30,
 						quoteLength: "short",
-					});
+					};
 				}
 			} else {
 				// Set default config for unauthenticated users
-				setConfig({
+				newConfig = {
 					gameMode: "words",
 					capitalsEnabled: false,
 					punctuationEnabled: false,
 					roundTime: 30,
 					quoteLength: "short",
-				});
+				};
 			}
+			setConfig(newConfig);
+			loadNewText(newConfig);
 		};
-		fetchSettings();
+		setupTest();
 	}, [isPending, session?.user.id]);
-
-	// useMemo(() => {
-	// 	if (initialLoad) {
-	// 		setConfig(initialLoad);
-	// 	}
-	// }, [initialLoad]);
 
 	// STATES
 	const [isLoading, setIsLoading] = useState(true);
 	const [currentText, setCurrentText] = useState("");
 	const [textContent, setTextContent] = useState<string[][]>([]);
 	const [isFocused, setIsFocused] = useState(true);
-	// const [capitalsEnabled, setCapitalsEnabled] = useState(
-	// 	config.capitalsEnabled || false
-	// );
-	// const [punctuationEnabled, setPunctuationEnabled] = useState(
-	// 	config.punctuationEnabled || false
-	// );
 	const [errors, setErrors] = useState(0);
 	const [totalChars, setTotalChars] = useState(0);
-	// const [roundTime, setRoundTime] = useState(config.roundTime || 60);
 	const [isActive, setIsActive] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
 	const [results, setResults] = useState<RoundResult | null>(null);
 	const [roundComplete, setRoundComplete] = useState(false);
-
 	const [roundStats, setRoundStats] = useState<
 		Array<{ time: number; errors: number; wpm: number }>
 	>([]);
-	// const [gameMode, setGameMode] = useState(config.gameMode);
-	// const [quoteLength, setQuoteLength] = useState(
-	// 	config.quoteLength
-	// );
 
 	// REFS
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -103,43 +88,30 @@ const HomePage = () => {
 	const textContentRef = useRef<HTMLDivElement>(null);
 	const resetBtnRef = useRef<HTMLButtonElement>(null);
 
-	// TIMER LOGIC
-	const expiryTimestamp = new Date();
-	expiryTimestamp.setSeconds(expiryTimestamp.getSeconds() + config.roundTime); // Set initial expiry time
+	const [lineOffsets, setLineOffsets] = useState<Set<number>>(new Set());
 
-	const { totalSeconds, pause, resume, restart } = useTimer({
-		expiryTimestamp: expiryTimestamp,
-		onExpire: () => endTest(),
+	const { totalSeconds, pause, start, reset } = useStopwatch({
+		// expiryTimestamp: expiryTimestamp,
+		// onExpire: () => endTest(),
 		autoStart: false,
 	});
 
-	const startTimer = (roundTime: number) => {
-		const newExpiryTimestamp = new Date();
-		if (config.gameMode === "words") {
-			newExpiryTimestamp.setSeconds(
-				newExpiryTimestamp.getSeconds() + roundTime
-			);
-		} else {
-			newExpiryTimestamp.setSeconds(newExpiryTimestamp.getSeconds() + 3600); // 1 hour for quote mode
-		}
-		restart(newExpiryTimestamp);
-	};
-
 	// LOAD NEW TEXT LOGIC
-	const loadNewText = async () => {
-		if (config.gameMode === "quote") {
+	const loadNewText = async (settings: GameConfig) => {
+		setIsLoading(true);
+		if (settings.gameMode === "quote") {
 			try {
 				let minLength = 0;
 				let maxLength = 0;
-				if (config.quoteLength === "short") {
-					minLength = 100;
+				if (settings.quoteLength === "short") {
+					minLength = 75;
 					maxLength = 150;
-				} else if (config.quoteLength === "medium") {
+				} else if (settings.quoteLength === "medium") {
 					minLength = 200;
-					maxLength = 250;
-				} else if (config.quoteLength === "long") {
-					minLength = 275;
-					maxLength = 350;
+					maxLength = 300;
+				} else if (settings.quoteLength === "long") {
+					minLength = 325;
+					maxLength = 450;
 				}
 				const text = await getRandomQuote(minLength, maxLength).then(
 					(quote) => quote
@@ -149,45 +121,52 @@ const HomePage = () => {
 				console.error("Error fetching new text:", error);
 				return "Error fetching new text.";
 			}
-		} else if (config.gameMode === "words") {
+		} else if (settings.gameMode === "words") {
 			const text = await getRandomWords(
 				50,
-				config.capitalsEnabled,
-				config.punctuationEnabled
+				settings.capitalsEnabled,
+				settings.punctuationEnabled
 			);
 			setCurrentText(text);
 		}
+		resetTest();
+		setIsLoading(false);
 	};
 
 	useEffect(() => {
 		setTextContent(
-			currentText
-				.split("")
-				.map((char) =>
-					char === "—"
-						? [
-								"-",
-								"text-foreground relative transition-all duration-150 ease-in-out",
-						  ]
-						: [
-								char,
-								"text-foreground relative transition-all duration-150 ease-in-out",
-						  ]
-				)
+			currentText.split("").map((char) => {
+				if (char === "—") {
+					return [
+						"-",
+						"text-foreground relative transition-all duration-150 ease-in-out",
+					];
+				} else if (char === "’") {
+					return [
+						"'",
+						"text-foreground relative transition-all duration-150 ease-in-out",
+					];
+				} else {
+					return [
+						char,
+						"text-foreground relative transition-all duration-150 ease-in-out",
+					];
+				}
+			})
 		);
 	}, [currentText]);
 
 	useEffect(() => {
-		setIsLoading(true);
-		loadNewText();
-		// resetTest();
-		setIsLoading(false);
-	}, [
-		config.gameMode,
-		config.capitalsEnabled,
-		config.punctuationEnabled,
-		config.quoteLength,
-	]);
+		if (textContentRef.current) {
+			const offsets: Set<number> = new Set();
+			const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
+				.children as HTMLCollectionOf<HTMLSpanElement>;
+			for (let i = 0; i < chars.length; i++) {
+				offsets.add(chars[i].offsetTop);
+			}
+			setLineOffsets(offsets);
+		}
+	}, [textContent]);
 
 	// GAME LOGIC
 	const resetTest = () => {
@@ -207,17 +186,14 @@ const HomePage = () => {
 		if (cursorRef.current) {
 			setCursorPosition();
 		}
-		pause();
+		reset(new Date(), false);
 	};
-
-	useEffect(() => {
-		resetTest();
-	}, [currentText]);
 
 	const startTest = () => {
 		setIsActive(true);
 		setIsFocused(true);
-		startTimer(config.roundTime);
+		reset(new Date(), false);
+		start();
 	};
 
 	const endTest = () => {
@@ -242,7 +218,7 @@ const HomePage = () => {
 			inputRef.current.focus();
 			setIsPaused(false);
 			setIsFocused(true);
-			resume();
+			start();
 		}
 	};
 
@@ -250,21 +226,31 @@ const HomePage = () => {
 		if (!isFocused && !roundComplete) {
 			inputRef.current?.focus();
 		}
-	}, [isFocused]);
+	}, [isFocused, roundComplete]);
 
 	useEffect(() => {
+		if (totalSeconds >= config.roundTime && config.gameMode === "words") {
+			endTest();
+		}
 		if (isActive && !roundComplete) {
-			const timeElapsed =
-				config.gameMode === "words"
-					? (config.roundTime - totalSeconds) / 60
-					: (3600 - totalSeconds) / 60;
-			const grossWPM = totalChars / 5 / timeElapsed;
-			if (timeElapsed > 0) {
+			const timeElapsed = totalSeconds;
+			const grossWPM = totalChars / 5 / (timeElapsed / 60);
+			const errorsPerSecond = () => {
+				if (roundStats.length > 0) {
+					return Math.max(errors - roundStats[roundStats.length - 1].errors, 0);
+				} else {
+					return errors;
+				}
+			};
+			if (totalSeconds > 0)
 				setRoundStats([
 					...roundStats,
-					{ time: timeElapsed * 60, errors: errors, wpm: grossWPM },
+					{
+						time: timeElapsed,
+						errors: errorsPerSecond(),
+						wpm: grossWPM,
+					},
 				]);
-			}
 		}
 	}, [totalSeconds]);
 
@@ -313,18 +299,33 @@ const HomePage = () => {
 			? chars[inputValue.length].offsetTop
 			: chars[chars.length - 1].offsetTop;
 
+		const midLineOffset = [...lineOffsets].at(1);
+
+		textContentRef.current.scroll({
+			top: offsetTop - midLineOffset,
+			behavior: "auto",
+		});
+
 		cursorRef.current.style.left = `${offsetLeft - 7.5}px`;
-		cursorRef.current.style.top = `${offsetTop - 7.5}px`;
+		cursorRef.current.style.top = `${
+			offsetTop - textContentRef.current.scrollTop - 7.5
+		}px`;
+		console.log(
+			offsetLeft,
+			offsetTop,
+			textContentRef.current.scrollTop,
+			chars[inputValue.length].innerText
+		);
 	};
 
 	// UPDATE STATS LOGIC
 	const updateStats = () => {
-		const timeElapsed =
-			config.gameMode === "words"
-				? (config.roundTime - totalSeconds) / 60
-				: (3600 - totalSeconds) / 60;
-		const grossWPM = totalChars / 5 / timeElapsed;
-		const netWPM = Math.max(0, Math.round(grossWPM - errors / timeElapsed));
+		const timeElapsed = totalSeconds;
+		const grossWPM = totalChars / 5 / (timeElapsed / 60);
+		const netWPM = Math.max(
+			0,
+			Math.round(grossWPM - errors / (timeElapsed / 60))
+		);
 		const accuracy =
 			totalChars > 0
 				? Math.round(((totalChars - errors) / totalChars) * 100)
@@ -338,7 +339,6 @@ const HomePage = () => {
 		const wpmPerSecond = roundStats.map((stat) => {
 			return stat.wpm;
 		});
-
 		setResults({
 			wpm: netWPM,
 			accuracy,
@@ -392,28 +392,24 @@ const HomePage = () => {
 				capitalsEnabled: !config.capitalsEnabled,
 			};
 			setConfig(newConfig);
-			// loadNewText();
 		} else if (setting === "punctuationEnabled") {
 			newConfig = {
 				...config,
 				punctuationEnabled: !config.punctuationEnabled,
 			};
 			setConfig(newConfig);
-			// loadNewText();
 		} else if (setting === "gameMode") {
 			newConfig = {
 				...config,
 				gameMode: value,
 			};
 			setConfig(newConfig);
-			// loadNewText();
 		} else if (setting === "quoteLength") {
 			newConfig = {
 				...config,
 				quoteLength: value,
 			};
 			setConfig(newConfig);
-			// loadNewText();
 		} else {
 			newConfig = {
 				...config,
@@ -425,6 +421,7 @@ const HomePage = () => {
 		if (session?.user.id !== undefined) {
 			saveSettings(session?.user.id, newConfig);
 		}
+		loadNewText(newConfig);
 	};
 
 	if (isPending || isLoading) {
@@ -483,7 +480,10 @@ const HomePage = () => {
 					</div>
 				)}
 				<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-					<ResetButton reset={loadNewText} buttonRef={resetBtnRef} />
+					<ResetButton
+						reset={() => loadNewText(config)}
+						buttonRef={resetBtnRef}
+					/>
 				</div>
 			</div>
 			{/* Test Container Wrapper */}
@@ -515,11 +515,14 @@ const HomePage = () => {
 					onFocus={handleFocus}
 				>
 					{/*  Main Test Container */}
-					<div className='max-w-250' onClick={() => inputRef.current?.focus()}>
+					<div
+						className='max-w-300 px-5'
+						onClick={() => inputRef.current?.focus()}
+					>
 						{/* Setting */}
 						<div
-							className={`transition-all duration-300 ease-in-out mb-0 ${
-								!isActive && !isPaused ? "opacity-100" : "opacity-0"
+							className={`transition-all duration-300 ease-in-out ${
+								!isActive && !isPaused ? "opacity-100 mb-10" : "opacity-0 mb-0"
 							}`}
 						>
 							<SettingsCard
@@ -532,14 +535,14 @@ const HomePage = () => {
 						{/* Progress Bar and Timer */}
 						<div
 							className={`transition-all duration-300 ease-in-out ${
-								isActive && config.gameMode === "words"
-									? "opacity-100 mb-20"
-									: "opacity-0 mb-0"
+								isActive ? "opacity-100 mb-10" : "opacity-0 mb-0"
 							}`}
 						>
 							<ProgressBar
-								timeLeft={totalSeconds}
-								roundTime={config.roundTime}
+								secondsElapsed={totalSeconds}
+								config={config}
+								charsTyped={totalChars}
+								totalChars={textContent.length}
 							/>
 						</div>
 						{/* Typing Area */}
@@ -552,7 +555,10 @@ const HomePage = () => {
 						/>
 						{/* Control Buttons */}
 						<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-							<ResetButton reset={loadNewText} buttonRef={resetBtnRef} />
+							<ResetButton
+								reset={() => loadNewText(config)}
+								buttonRef={resetBtnRef}
+							/>
 						</div>
 					</div>
 				</div>
