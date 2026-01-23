@@ -30,7 +30,7 @@ const HomePage = () => {
 
 	useEffect(() => {
 		const setupTest = async () => {
-			let newConfig;
+			let newConfig: GameConfig;
 			if (session?.user.id !== undefined && !isPending) {
 				const settings = await getSettings(session.user.id);
 				if (settings) {
@@ -64,11 +64,16 @@ const HomePage = () => {
 			setConfig(newConfig);
 			loadNewText(newConfig);
 		};
+		setIsSettingUp(true);
 		setupTest();
+		setTimeout(() => {
+			setIsSettingUp(false);
+		}, 500);
 	}, [isPending, session?.user.id]);
 
 	// STATES
 	const [isLoading, setIsLoading] = useState(true);
+	const [isSettingUp, setIsSettingUp] = useState(true);
 	const [currentText, setCurrentText] = useState("");
 	const [textContent, setTextContent] = useState<string[][]>([]);
 	const [isFocused, setIsFocused] = useState(true);
@@ -84,11 +89,11 @@ const HomePage = () => {
 
 	// REFS
 	const inputRef = useRef<HTMLTextAreaElement>(null);
-	const cursorRef = useRef<HTMLDivElement>(null);
 	const textContentRef = useRef<HTMLDivElement>(null);
-	const resetBtnRef = useRef<HTMLButtonElement>(null);
+	const cursorRef = useRef<HTMLSpanElement>(null);
 
-	const [lineOffsets, setLineOffsets] = useState<Set<number>>(new Set());
+	const [cursorX, setCursorX] = useState(0);
+	const [cursorY, setCursorY] = useState(0);
 
 	const { totalSeconds, pause, start, reset } = useStopwatch({
 		// expiryTimestamp: expiryTimestamp,
@@ -114,7 +119,7 @@ const HomePage = () => {
 					maxLength = 450;
 				}
 				const text = await getRandomQuote(minLength, maxLength).then(
-					(quote) => quote
+					(quote) => quote,
 				);
 				setCurrentText(text);
 			} catch (error) {
@@ -125,7 +130,7 @@ const HomePage = () => {
 			const text = await getRandomWords(
 				50,
 				settings.capitalsEnabled,
-				settings.punctuationEnabled
+				settings.punctuationEnabled,
 			);
 			setCurrentText(text);
 		}
@@ -135,36 +140,49 @@ const HomePage = () => {
 
 	useEffect(() => {
 		setTextContent(
-			currentText.split("").map((char) => {
-				if (char === "—") {
-					return [
-						"-",
-						"text-foreground relative transition-all duration-150 ease-in-out",
-					];
-				} else if (char === "’") {
-					return [
-						"'",
-						"text-foreground relative transition-all duration-150 ease-in-out",
-					];
-				} else {
-					return [
-						char,
-						"text-foreground relative transition-all duration-150 ease-in-out",
-					];
+			currentText.split("").map((char, i) => {
+				const charArr = [
+					char,
+					"text-foreground relative transition-all duration-150 ease-in-out",
+				];
+				if (i === 0) {
+					charArr[1] += " cursor-target";
 				}
-			})
+				if (char === "—") {
+					charArr[0] = "-";
+				} else if (char === "'") {
+					charArr[0] = "'";
+				}
+				return charArr;
+			}),
 		);
 	}, [currentText]);
 
 	useEffect(() => {
-		if (textContentRef.current) {
-			const offsets: Set<number> = new Set();
-			const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
+		if (
+			textContentRef.current &&
+			inputRef.current &&
+			cursorRef.current &&
+			textContent.length > 0
+		) {
+			const inputLength = inputRef.current.value.length;
+			const chars = textContentRef.current
 				.children as HTMLCollectionOf<HTMLSpanElement>;
-			for (let i = 0; i < chars.length; i++) {
-				offsets.add(chars[i].offsetTop);
+
+			const targetIndex =
+				inputLength < textContent.length ? inputLength : textContent.length - 1;
+			const targetChar = chars[targetIndex] as HTMLSpanElement;
+
+			if (targetChar) {
+				const charRect = targetChar.getBoundingClientRect();
+				const containerRect = textContentRef.current.getBoundingClientRect();
+
+				const relativeLeft = charRect.left - containerRect.left;
+				const relativeTop = charRect.top - containerRect.top;
+
+				setCursorX(relativeLeft);
+				setCursorY(relativeTop);
 			}
-			setLineOffsets(offsets);
 		}
 	}, [textContent]);
 
@@ -182,9 +200,6 @@ const HomePage = () => {
 			inputRef.current.value = "";
 			inputRef.current.focus();
 			setIsFocused(true);
-		}
-		if (cursorRef.current) {
-			setCursorPosition();
 		}
 		reset(new Date(), false);
 	};
@@ -280,42 +295,74 @@ const HomePage = () => {
 		});
 		setErrors(errorCount);
 		setTextContent(updatedContent);
-	};
 
-	// SET CURSOR POSITION LOGIC
-	const setCursorPosition = (inputValue = "") => {
-		if (!textContentRef.current) return;
-		if (!cursorRef.current) return;
+		// Update cursor position and handle scrolling
+		if (
+			textContentRef.current &&
+			input.length <= textContent.length &&
+			cursorRef.current
+		) {
+			const chars = textContentRef.current
+				.children as HTMLCollectionOf<HTMLSpanElement>;
+			const targetChar =
+				input.length < textContent.length
+					? (chars[input.length] as HTMLSpanElement)
+					: (chars[textContent.length - 1] as HTMLSpanElement);
 
-		const chars: HTMLCollectionOf<HTMLSpanElement> = textContentRef.current
-			.children as HTMLCollectionOf<HTMLSpanElement>;
-		if (chars.length === 0) return;
+			if (targetChar) {
+				const charRect = targetChar.getBoundingClientRect();
+				const containerRect = textContentRef.current.getBoundingClientRect();
 
-		const offsetLeft = chars[inputValue.length]
-			? chars[inputValue.length].offsetLeft
-			: chars[chars.length - 1].offsetLeft +
-			  chars[chars.length - 1].offsetWidth;
-		const offsetTop = chars[inputValue.length]
-			? chars[inputValue.length].offsetTop
-			: chars[chars.length - 1].offsetTop;
+				const relativeLeft = charRect.left - containerRect.left;
+				const relativeTop = charRect.top - containerRect.top;
 
-		const midLineOffset = [...lineOffsets].at(1);
+				const containerHeight = containerRect.height;
+				const lineHeight = containerHeight / 3;
+				const currentVisibleLine = Math.floor(relativeTop / lineHeight);
 
-		textContentRef.current.scroll({
-			top: offsetTop - midLineOffset,
-			behavior: "auto",
-		});
+				const needsScrollDown = currentVisibleLine >= 2;
+				const needsScrollUp =
+					currentVisibleLine === 0 && textContentRef.current.scrollTop > 0;
 
-		cursorRef.current.style.left = `${offsetLeft - 7.5}px`;
-		cursorRef.current.style.top = `${
-			offsetTop - textContentRef.current.scrollTop - 7.5
-		}px`;
-		console.log(
-			offsetLeft,
-			offsetTop,
-			textContentRef.current.scrollTop,
-			chars[inputValue.length].innerText
-		);
+				if (needsScrollDown) {
+					textContentRef.current.scrollBy({
+						top: lineHeight,
+						behavior: "auto",
+					});
+				} else if (needsScrollUp) {
+					textContentRef.current.scrollBy({
+						top: -lineHeight,
+						behavior: "auto",
+					});
+				}
+
+				if (cursorRef.current) {
+					cursorRef.current.style.opacity = "0";
+				}
+
+				if (needsScrollDown || needsScrollUp) {
+					setTimeout(() => {
+						const updatedCharRect = targetChar.getBoundingClientRect();
+						const updatedContainerRect =
+							textContentRef.current!.getBoundingClientRect();
+
+						const updatedRelativeLeft =
+							updatedCharRect.left - updatedContainerRect.left;
+						const updatedRelativeTop =
+							updatedCharRect.top - updatedContainerRect.top;
+
+						setCursorX(updatedRelativeLeft);
+						setCursorY(updatedRelativeTop);
+					}, 100);
+				} else {
+					setCursorX(relativeLeft);
+					setCursorY(relativeTop);
+				}
+				if (cursorRef.current) {
+					cursorRef.current.style.opacity = "1";
+				}
+			}
+		}
 	};
 
 	// UPDATE STATS LOGIC
@@ -324,7 +371,7 @@ const HomePage = () => {
 		const grossWPM = totalChars / 5 / (timeElapsed / 60);
 		const netWPM = Math.max(
 			0,
-			Math.round(grossWPM - errors / (timeElapsed / 60))
+			Math.round(grossWPM - errors / (timeElapsed / 60)),
 		);
 		const accuracy =
 			totalChars > 0
@@ -366,7 +413,7 @@ const HomePage = () => {
 					errorsPerSecond,
 					wpmPerSecond,
 				},
-				session?.user.id
+				session?.user.id,
 			);
 		}
 	};
@@ -377,7 +424,6 @@ const HomePage = () => {
 
 		setTotalChars(e.target.value.length);
 		updateDisplay(e.target.value);
-		setCursorPosition(e.target.value);
 
 		if (e.target.value.length >= currentText.length) {
 			endTest();
@@ -424,9 +470,9 @@ const HomePage = () => {
 		loadNewText(newConfig);
 	};
 
-	if (isPending || isLoading) {
-		return <Loading />;
-	}
+	// if (isPending || isLoading) {
+	// 	return <Loading />;
+	// }
 
 	return (
 		<div className='flex justify-center p-5 mt-20 font-mono'>
@@ -480,10 +526,7 @@ const HomePage = () => {
 					</div>
 				)}
 				<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-					<ResetButton
-						reset={() => loadNewText(config)}
-						buttonRef={resetBtnRef}
-					/>
+					<ResetButton reset={() => loadNewText(config)} />
 				</div>
 			</div>
 			{/* Test Container Wrapper */}
@@ -522,7 +565,9 @@ const HomePage = () => {
 						{/* Setting */}
 						<div
 							className={`transition-all duration-300 ease-in-out ${
-								!isActive && !isPaused ? "opacity-100 mb-10" : "opacity-0 mb-0"
+								!isActive && !isPaused && !isSettingUp
+									? "opacity-100 mb-10"
+									: "opacity-0 mb-0"
 							}`}
 						>
 							<SettingsCard
@@ -551,14 +596,14 @@ const HomePage = () => {
 							inputRef={inputRef}
 							textContentRef={textContentRef}
 							cursorRef={cursorRef}
+							cursorX={cursorX}
+							cursorY={cursorY}
 							handleInput={handleInput}
+							isLoading={isLoading || isPending}
 						/>
 						{/* Control Buttons */}
 						<div className='max-md:flex-col max-md:items-center flex gap-4 justify-center flex-wrap'>
-							<ResetButton
-								reset={() => loadNewText(config)}
-								buttonRef={resetBtnRef}
-							/>
+							<ResetButton reset={() => loadNewText(config)} />
 						</div>
 					</div>
 				</div>

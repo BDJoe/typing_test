@@ -1,7 +1,5 @@
 "use client";
 import { signOut, useSession } from "@/lib/auth-client";
-import { faUser } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +10,7 @@ import {
 	navigationMenuTriggerStyle,
 } from "./ui/navigation-menu";
 import { Button } from "./ui/button";
+import AccountDropdown from "./account-dropdown";
 
 const Header = () => {
 	const pathname = usePathname();
@@ -45,12 +44,10 @@ const Header = () => {
 				<NavigationMenuList className='flex-wrap px-8'>
 					<NavigationMenuItem>
 						<NavigationMenuLink asChild>
-							<Link
-								href='/dashboard'
-								className='bg-primary hover:bg-primary/80 text-accent rounded-2xl mr-3'
-							>
-								<FontAwesomeIcon icon={faUser} className={`text-xl`} />
-							</Link>
+							<AccountDropdown
+								name={session?.user.name}
+								email={session?.user.email}
+							/>
 						</NavigationMenuLink>
 					</NavigationMenuItem>
 

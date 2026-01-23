@@ -128,3 +128,29 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+@keyframes caret-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+.absolute {
+	transition: opacity 150ms ease-in-out, left var(--caret-duration, 100ms) ease-out, top var(--caret-duration, 100ms) ease-out;
+}
+
+.caret-slow .absolute {
+	transition: opacity 150ms ease-in-out, left 200ms ease-out, top 200ms ease-out;
+}
+
+.caret-normal .absolute {
+	transition: opacity 150ms ease-in-out, left 100ms ease-out, top 100ms ease-out;
+}
+
+.caret-fast .absolute {
+	transition: opacity 150ms ease-in-out, left 50ms ease-out, top 50ms ease-out;
+}

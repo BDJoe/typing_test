@@ -20,14 +20,16 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "./ui/dialog";
 import { deleteUser } from "@/lib/auth-client";
-import router from "next/router";
 
-const DeleteAccount = () => {
+interface Props {
+	open: boolean;
+	setOpen: (open: boolean) => void;
+}
+
+const DeleteAccount = ({ open, setOpen }: Props) => {
 	const [loading, setLoading] = useState(false);
-	const [open, setOpen] = useState(false);
 	const passwordSchema = z.object({
 		password: z
 			.string()
@@ -71,14 +73,11 @@ const DeleteAccount = () => {
 		<Dialog
 			open={open}
 			onOpenChange={(open) => {
-				setOpen(open);
+				setOpen(false);
 				form.reset();
 			}}
 		>
 			<form id='delete-account-form' onSubmit={form.handleSubmit(handleSubmit)}>
-				<DialogTrigger asChild>
-					<Button variant='destructive'>Delete Account</Button>
-				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Delete Account</DialogTitle>

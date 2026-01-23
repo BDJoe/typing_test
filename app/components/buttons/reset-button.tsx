@@ -5,11 +5,10 @@ import { Ref } from "react";
 
 interface Props {
 	reset: () => void;
-	buttonRef: Ref<HTMLButtonElement>;
 }
-const ResetButton = ({ reset, buttonRef }: Props) => {
+const ResetButton = ({ reset }: Props) => {
 	return (
-		<Button className='text-lg p-6' onClick={reset} ref={buttonRef}>
+		<Button className='text-lg p-6' onClick={reset}>
 			<FontAwesomeIcon icon={faRedo} />
 			New Test
 		</Button>

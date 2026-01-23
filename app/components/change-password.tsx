@@ -21,12 +21,15 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "./ui/dialog";
 
-const ChangePassword = () => {
+interface Props {
+	open: boolean;
+	setOpen: (open: boolean) => void;
+}
+
+const ChangePassword = ({ open, setOpen }: Props) => {
 	const [loading, setLoading] = useState(false);
-	const [open, setOpen] = useState(false);
 	const form = useForm<z.infer<typeof ChangePasswordSchema>>({
 		resolver: zodResolver(ChangePasswordSchema),
 		defaultValues: {
@@ -60,7 +63,7 @@ const ChangePassword = () => {
 					onError: (ctx) => {
 						toast.error(ctx.error.message);
 					},
-				}
+				},
 			);
 		} catch (error) {
 			console.log(error);
@@ -71,8 +74,8 @@ const ChangePassword = () => {
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={(open) => {
-				setOpen(open);
+			onOpenChange={() => {
+				setOpen(false);
 				form.reset();
 			}}
 		>
@@ -80,9 +83,6 @@ const ChangePassword = () => {
 				id='change-password-form'
 				onSubmit={form.handleSubmit(handleSubmit)}
 			>
-				<DialogTrigger asChild>
-					<Button>Change Password</Button>
-				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Change Password</DialogTitle>
