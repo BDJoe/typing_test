@@ -21,18 +21,25 @@ const Header = () => {
 			<div className='flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6 lg:px-8'>
 				<h1 className='block text-primary font-bold text-2xl'>Typing Test</h1>
 			</div>
-
-			<NavigationMenuList className='flex-wrap px-8'>
+			<NavigationMenuList>
 				<NavigationMenuItem>
-					<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-						<Link href='/' className='text-xl'>
+					<NavigationMenuLink
+						asChild
+						active={pathname === "/"}
+						className={navigationMenuTriggerStyle()}
+					>
+						<Link href='/' className='text-xl data-active:bg-accent'>
 							Home
 						</Link>
 					</NavigationMenuLink>
 				</NavigationMenuItem>
 
 				<NavigationMenuItem>
-					<NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+					<NavigationMenuLink
+						asChild
+						active={pathname === "/stats"}
+						className={navigationMenuTriggerStyle()}
+					>
 						<Link href='/stats' className='text-xl'>
 							Stats
 						</Link>

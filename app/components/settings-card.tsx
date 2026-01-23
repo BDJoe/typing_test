@@ -31,8 +31,8 @@ const SettingsCard = ({ config, handleSettingChange }: Props) => {
 		handleSettingChange("quoteLength", length);
 	};
 	return (
-		<div>
-			<div className='flex justify-center items-center gap-5 w-fit mx-auto rounded-xl h-18 bg-background border-2'>
+		<div className='flex items-center justify-center gap-3'>
+			<div className='flex justify-center items-center gap-5 w-fit rounded-xl h-18 bg-background border-2'>
 				<div className=' px-4 text-base font-semibold flex items-center gap-3 w-fit h-full z-50 relative'>
 					<button
 						className={
@@ -57,7 +57,7 @@ const SettingsCard = ({ config, handleSettingChange }: Props) => {
 				</div>
 			</div>
 			{/* Words/Time Card */}
-			<div className='flex justify-center items-center gap-5 w-fit mx-auto mt-4 rounded-xl h-18 bg-background border-2'>
+			<div className='flex justify-center items-center gap-5 w-fit rounded-xl h-18 bg-background border-2'>
 				<div
 					className={`flex justify-center items-center gap-5 h-15 w-fit transition-all duration-300 ease-in-out ${
 						config.gameMode === "words" ? "opacity-100" : "opacity-0"
