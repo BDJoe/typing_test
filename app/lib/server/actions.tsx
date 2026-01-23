@@ -9,7 +9,7 @@ const filePath: string = process.cwd() + "/app/lib/data/oxford-5k.txt";
 export const getRandomWords = async (
 	count: number,
 	enableCapitals: boolean,
-	enablePunctuation: boolean
+	enablePunctuation: boolean,
 ) => {
 	const content: string = await fs.readFile(filePath, "utf-8");
 	const data = content.split(/\r?\n/);
@@ -19,7 +19,7 @@ export const getRandomWords = async (
 		if (enableCapitals) {
 			if (randomIndex % 3 === 0)
 				words.push(
-					data[randomIndex][0].toUpperCase() + data[randomIndex].slice(1)
+					data[randomIndex][0].toUpperCase() + data[randomIndex].slice(1),
 				);
 			else words.push(data[randomIndex].toLowerCase());
 		} else {
@@ -40,7 +40,7 @@ export const getRandomWords = async (
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 export async function getRandomQuote(minLength: number, maxLength: number) {
 	const res = fetch(
-		`https://api.quotable.io/random?minLength=${minLength}&maxLength=${maxLength}`
+		`https://api.quotable.io/random?minLength=${minLength}&maxLength=${maxLength}`,
 	).then((res) => {
 		if (!res.ok) {
 			throw new Error("Failed to fetch quote");
