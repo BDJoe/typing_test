@@ -18,8 +18,9 @@ import {
 } from "./ui/table";
 import { Button } from "./ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { RoundResult } from "@/lib/types/types";
 
-const columns: ColumnDef<TData, TValue>[] = [
+const columns: ColumnDef<RoundResult>[] = [
 	{
 		header: ({ column }) => {
 			return (
@@ -62,14 +63,14 @@ const columns: ColumnDef<TData, TValue>[] = [
 ];
 
 interface Props {
-	results: TData[];
+	results: RoundResult[];
 	setSelected: (id: number) => void;
 	selectedRowId: number;
 }
 
 const StatsTable = ({ results, setSelected, selectedRowId }: Props) => {
 	results.sort(
-		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+		(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
 	);
 	const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -98,8 +99,8 @@ const StatsTable = ({ results, setSelected, selectedRowId }: Props) => {
 											? null
 											: flexRender(
 													header.column.columnDef.header,
-													header.getContext()
-											  )}
+													header.getContext(),
+												)}
 									</TableHead>
 								))}
 							</TableRow>
@@ -111,7 +112,7 @@ const StatsTable = ({ results, setSelected, selectedRowId }: Props) => {
 								<TableRow
 									key={row.id}
 									data-state={row.getIsSelected() && "selected"}
-									onClick={() => setSelected(row.original.id)}
+									onClick={() => setSelected(row.original.id!)}
 									className={
 										row.original.id === selectedRowId
 											? "bg-accent-foreground text-accent hover:bg-accent-foreground/80 hover:text-accent/80"
@@ -122,7 +123,7 @@ const StatsTable = ({ results, setSelected, selectedRowId }: Props) => {
 										<TableCell key={cell.id}>
 											{flexRender(
 												cell.column.columnDef.cell,
-												cell.getContext()
+												cell.getContext(),
 											)}
 										</TableCell>
 									))}
