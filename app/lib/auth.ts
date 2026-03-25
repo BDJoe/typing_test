@@ -4,7 +4,10 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { sendResetPassword } from "@/lib/resend";
 
 export const auth = betterAuth({
-	trustedOrigins: ["http://192.168.0.173:3000"],
+	trustedOrigins: [
+		"http://192.168.0.173:3000",
+		"https://typing-test-five-dun.vercel.app/",
+	],
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
